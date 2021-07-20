@@ -5,10 +5,12 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.restaction.CommandUpdateAction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.ruscalworld.pollbot.commands.PollCommand;
 import ru.ruscalworld.pollbot.config.Config;
 import ru.ruscalworld.pollbot.core.Command;
-import ru.ruscalworld.pollbot.listeners.GuildJoinListener;
+import ru.ruscalworld.pollbot.listeners.GuildListener;
 import ru.ruscalworld.pollbot.listeners.SlashCommandListener;
 import ru.ruscalworld.storagelib.Storage;
 import ru.ruscalworld.storagelib.impl.SQLiteStorage;
@@ -17,6 +19,7 @@ import javax.security.auth.login.LoginException;
 import java.util.HashMap;
 
 public class PollBot {
+    private static final Logger logger = LoggerFactory.getLogger(PollBot.class);
     private static PollBot instance;
 
     private final HashMap<String, Command> commands = new HashMap<>();
@@ -40,14 +43,14 @@ public class PollBot {
     public void registerCommand(Command command) {
         CommandData data = command.getCommandData();
         String name = data.getName();
-        command.onRegister(data);
+        command.onPreRegister(data);
         this.getCommands().put(name, command);
     }
 
     public void onStart() {
         JDABuilder builder = JDABuilder.createDefault(this.getConfig().getBotToken());
 
-        builder.addEventListeners(new GuildJoinListener());
+        builder.addEventListeners(new GuildListener());
         builder.addEventListeners(new SlashCommandListener());
 
         try {
@@ -66,7 +69,10 @@ public class PollBot {
     }
 
     public void onCommandsReady() {
-        SQLiteStorage storage = new SQLiteStorage("jdbc:sqlite:" + this.getConfig().getStoragePath() + "/pollbot.db");
+        String path = this.getConfig().getStoragePath() + "/pollbot.db";
+        logger.info("Initializing storage ({})", path);
+        SQLiteStorage storage = new SQLiteStorage("jdbc:sqlite:" + path);
+
         storage.registerMigration("polls");
         storage.registerMigration("variants");
         storage.registerMigration("votes");
@@ -84,6 +90,7 @@ public class PollBot {
         CommandUpdateAction commands = this.getJDA().updateCommands();
         for (Command command : this.getCommands().values()) {
             if (!command.isGlobal()) continue;
+            logger.debug("Registering global command \"{}\"", command.getCommandData().getName());
             commands = commands.addCommands(command.getCommandData());
         }
         commands.complete();
@@ -92,6 +99,8 @@ public class PollBot {
     public CommandUpdateAction updateGuildCommands(Guild guild) {
         CommandUpdateAction commands = guild.updateCommands();
         for (Command command : this.getCommands().values()) {
+            if (command.isGlobal()) continue;
+            logger.debug("Updating \"{}\" command for guild \"{}\"", command.getCommandData().getName(), guild.getName());
             commands = commands.addCommands(command.getCommandData());
         }
         return commands;

@@ -232,8 +232,8 @@ public class Poll extends DefaultModel {
         this.anonymous = anonymous;
     }
 
-    public @Nullable String getTitle() {
-        return title;
+    public @NotNull String getTitle() {
+        return this.title != null ? this.title : this.name;
     }
 
     public String getName() {

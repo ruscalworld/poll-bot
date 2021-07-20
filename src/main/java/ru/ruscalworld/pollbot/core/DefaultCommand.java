@@ -13,11 +13,12 @@ public abstract class DefaultCommand implements Command {
     }
 
     @Override
-    public final CommandData getCommandData() {
+    public CommandData getCommandData() {
         return new CommandData(this.getName(), this.getDescription());
     }
 
-    public abstract void onRegister(CommandData data);
+    @Override
+    public void onPreRegister(CommandData data) {}
 
     public String getName() {
         return name;
