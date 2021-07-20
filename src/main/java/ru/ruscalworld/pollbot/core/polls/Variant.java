@@ -51,7 +51,7 @@ public class Variant extends DefaultModel {
 
     public static @NotNull Variant get(String name, Poll poll) throws Exception {
         Storage storage = PollBot.getInstance().getStorage();
-        List<Variant> variants = storage.findAll(Variant.class, "name", name);
+        List<Variant> variants = storage.findAll(Variant.class, Comparison.equal("name", name));
         for (Variant variant : variants) {
             variant.setPoll(poll);
             if (variant.getName().equals(name)) return variant;
@@ -87,7 +87,7 @@ public class Variant extends DefaultModel {
         List<Vote> votes = new ArrayList<>();
 
         Storage storage = PollBot.getInstance().getStorage();
-        List<Vote> storedVotes = storage.findAll(Vote.class, "variant_id", this.getId());
+        List<Vote> storedVotes = storage.findAll(Vote.class, Comparison.equal("variant_id", this.getId()));
 
         storedVotes.forEach(vote -> {
             User user = PollBot.getInstance().getJDA().getUserById(vote.getMemberId());

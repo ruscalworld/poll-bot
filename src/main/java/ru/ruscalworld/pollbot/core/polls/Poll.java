@@ -12,6 +12,7 @@ import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
 import ru.ruscalworld.storagelib.annotations.Model;
 import ru.ruscalworld.storagelib.annotations.Property;
+import ru.ruscalworld.storagelib.builder.expressions.Comparison;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -170,7 +171,7 @@ public class Poll extends DefaultModel {
         variants.clear();
         Storage storage = PollBot.getInstance().getStorage();
 
-        List<Variant> storedVariants = storage.findAll(Variant.class, "poll_id", this.getId());
+        List<Variant> storedVariants = storage.findAll(Variant.class, Comparison.equal("poll_id", this.getId()));
         storedVariants.forEach(variant -> {
             variant.setPoll(this);
             variants.add(variant);
@@ -190,7 +191,7 @@ public class Poll extends DefaultModel {
 
     public List<Vote> getVotes(User user) throws Exception {
         Storage storage = PollBot.getInstance().getStorage();
-        List<Vote> votes = storage.findAll(Vote.class, "member_id", user.getId());
+        List<Vote> votes = storage.findAll(Vote.class, Comparison.equal("member_id", user.getId()));
 
         for (Vote vote : votes) {
             Variant variant = this.getVariant(vote.getVariantId());
@@ -286,7 +287,7 @@ public class Poll extends DefaultModel {
         this.channelId = channelId;
     }
 
-    public Member getOwner() {
+    public @NotNull Member getOwner() {
         return owner;
     }
 
