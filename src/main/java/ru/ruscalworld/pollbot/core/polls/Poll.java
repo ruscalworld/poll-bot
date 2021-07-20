@@ -154,8 +154,9 @@ public class Poll extends DefaultModel {
 
         for (Variant variant : this.getVariants()) {
             float percentage = totalVotes > 0 ? (float) Math.round((float) variant.getVotes().size() / (float) totalVotes * 1000) / 10 : 0;
-            String name = variant.getSign() + " • " + variant.getDescription();
-            String value = ProgressBar.makeDefault(Math.round(percentage), 15) + " • " +
+            String name = variant.getSign() + " • " + variant.getTitle();
+            String value = (variant.getDescription() != null ? variant.getDescription() + "\n" : "") +
+                    ProgressBar.makeDefault(Math.round(percentage), 15) + " • " +
                     variant.getVotes().size() + " (" + percentage + "%)";
             builder.addField(name, value, false);
         }

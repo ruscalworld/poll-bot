@@ -28,18 +28,20 @@ public class Variant extends DefaultModel {
     private String name;
     @Property(column = "sign")
     private String sign;
+    @Property(column = "title")
+    private String title;
     @Property(column = "description")
-    private String description;
+    @Nullable private String description;
 
     private @NotNull List<Vote> votes = new ArrayList<>();
     private boolean votesFetched;
 
-    public Variant(Poll poll, String name, String sign, String description) {
+    public Variant(Poll poll, String name, String sign, String title) {
         this.poll = poll;
         this.name = name;
         this.sign = sign;
+        this.title = title;
         this.pollId = poll.getId();
-        this.description = description;
     }
 
     public Variant() {
@@ -77,7 +79,7 @@ public class Variant extends DefaultModel {
         return variants.get(0);
     }
 
-    public static Variant create(Poll poll, String name, String sign, String description) throws Exception {
+    public static Variant create(Poll poll, String name, String sign, @Nullable String description, String title) throws Exception {
         try {
             Variant.getByName(name, poll);
             throw new CommandException("Variant with this name already exists in selected poll");
@@ -89,7 +91,8 @@ public class Variant extends DefaultModel {
         if (sign.contains(">")) throw new CommandException("Sorry, but custom emojis are not supported yet");
 
         Storage storage = PollBot.getInstance().getStorage();
-        Variant variant = new Variant(poll, name, sign, description);
+        Variant variant = new Variant(poll, name, sign, title);
+        variant.setDescription(description);
         storage.save(variant);
         variant.getPoll().getVariants().add(variant);
         return variant;
@@ -138,7 +141,7 @@ public class Variant extends DefaultModel {
         return null;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
@@ -176,5 +179,17 @@ public class Variant extends DefaultModel {
 
     public void setPollId(long pollId) {
         this.pollId = pollId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setDescription(@Nullable String description) {
+        this.description = description;
     }
 }

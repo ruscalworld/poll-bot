@@ -32,11 +32,18 @@ public class VariantCommand extends DefaultCommand {
 
         switch (event.getSubcommandName()) {
             case "create":
-                OptionMapping textOption = event.getOption("text");
+                OptionMapping titleOption = event.getOption("title");
                 OptionMapping signOption = event.getOption("sign");
-                assert textOption != null && signOption != null;
+                OptionMapping descriptionOption = event.getOption("description");
+                assert titleOption != null && signOption != null;
 
-                Variant.create(poll, nameOption.getAsString(), signOption.getAsString(), textOption.getAsString());
+                Variant.create(poll,
+                        nameOption.getAsString(),
+                        signOption.getAsString(),
+                        descriptionOption != null ? descriptionOption.getAsString() : null,
+                        titleOption.getAsString()
+                );
+
                 poll.updateLatestMessage();
                 event.getHook().sendMessage("Variant has been successfully created").queue();
                 break;
@@ -54,8 +61,9 @@ public class VariantCommand extends DefaultCommand {
         return super.getCommandData().addSubcommands(
                 new SubcommandData("create", "Create a new variant for selected poll")
                         .addOption(OptionType.STRING, "name", "Short name of this variant that will not be visible", true)
-                        .addOption(OptionType.STRING, "text", "Text of this variant that will be visible to everyone", true)
-                        .addOption(OptionType.STRING, "sign", "An emoji for this variant", true),
+                        .addOption(OptionType.STRING, "title", "Long name of this variant that will be visible to everyone", true)
+                        .addOption(OptionType.STRING, "sign", "An emoji for this variant", true)
+                        .addOption(OptionType.STRING, "description", "More info about this variant that will be visible to everyone"),
                 new SubcommandData("delete", "Delete variant from selected poll")
                         .addOption(OptionType.STRING, "name", "Short name of variant that should be deleted", true)
         );
