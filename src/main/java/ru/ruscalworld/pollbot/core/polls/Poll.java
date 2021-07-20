@@ -146,6 +146,7 @@ public class Poll extends DefaultModel {
     }
 
     public EmbedBuilder getEmbed() throws Exception {
+        this.fetchVariants();
         int totalVotes = this.getTotalVotes();
         EmbedBuilder builder = new EmbedBuilder();
         builder.setTitle(this.getTitle());
