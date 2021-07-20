@@ -32,14 +32,15 @@ public class PollCommand extends DefaultCommand {
                 assert nameOption != null;
                 Poll poll = Poll.create(nameOption.getAsString(), event.getMember());
 
-                Message message = event.getHook().sendMessageEmbeds(poll.getEmbed().build()).complete();
-                poll.setMessage(message);
-                poll.save();
-
+                poll.preview(event.getHook());
                 session.setSelectedPoll(poll);
                 break;
             case "anonymous":
             case "describe":
+                break;
+            case "preview":
+                poll = ensurePollIsSelected(session);
+                poll.preview(event.getHook());
                 break;
             case "publish":
                 poll = ensurePollIsSelected(session);
@@ -67,6 +68,7 @@ public class PollCommand extends DefaultCommand {
                         .addOption(OptionType.STRING, "description", "New description of the poll", true),
                 new SubcommandData("anonymous", "Makes poll anonymous or not")
                         .addOption(OptionType.BOOLEAN, "value", "Should your poll be anonymous?", true),
+                new SubcommandData("preview", "Sends a message for selected poll, so you can see how your poll will appear"),
                 new SubcommandData("publish", "Publishes selected poll")
         );
     }

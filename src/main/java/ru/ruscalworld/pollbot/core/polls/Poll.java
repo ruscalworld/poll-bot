@@ -2,6 +2,7 @@ package ru.ruscalworld.pollbot.core.polls;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
@@ -78,6 +79,18 @@ public class Poll extends DefaultModel {
         return poll;
     }
 
+    public void preview(InteractionHook hook) throws Exception {
+        Message message = hook.sendMessageEmbeds(this.getEmbed().build()).complete();
+        if (this.getMessage() != null) {
+            this.getMessage().editMessage("Sorry, but bot can handle only one poll message. " +
+                    "Embed that you see below, will not be updated anymore. " +
+                    "Newer message with this poll can be found [here](" + message.getJumpUrl() + ").").queue();
+        }
+
+        this.setMessage(message);
+        this.save();
+    }
+
     public void publish(TextChannel channel) throws Exception {
         if (this.getVariants().size() < 2) throw new CommandException("You must add at least 2 variants");
         if (this.isPublished()) throw new CommandException("This poll is already published");
@@ -91,14 +104,13 @@ public class Poll extends DefaultModel {
         this.save();
     }
 
-    public void rerender() throws Exception {
-        EmbedBuilder builder = this.getEmbed();
-        if (this.getMessage() != null) this.getMessage().editMessage(builder.build()).queue();
+    public void updateLatestMessage() throws Exception {
+        if (this.getMessage() != null) this.getMessage().editMessage(this.getEmbed().build()).queue();
     }
 
     private String getEmbedFooter() {
         int memberCount = this.getMemberCount();
-        return memberCount + "participants" +
+        return memberCount + " participants" +
                 (this.isAnonymous() ? " • " + "Anonymous poll" : "") +
                 (this.isMultipleChoiceAllowed() ? " • " + "Multiple choice allowed" : "") +
                 (!this.isRevoteAllowed() ? " • " + "Revoting is disabled" : "");
@@ -112,13 +124,13 @@ public class Poll extends DefaultModel {
 
         for (Variant variant : this.getVariants()) {
             float percentage = totalVotes > 0 ? (float) Math.round((float) variant.getVotes().size() / (float) totalVotes * 1000) / 10 : 0;
-            String name = variant.getSign() + " • " + variant.getName();
+            String name = variant.getSign() + " • " + variant.getDescription();
             String value = ProgressBar.makeDefault(Math.round(percentage), 15) + " • " +
-                    variant.getVotes() + " (" + percentage + "%)";
+                    variant.getVotes().size() + " (" + percentage + "%)";
             builder.addField(name, value, false);
-            builder.setFooter(this.getEmbedFooter());
         }
 
+        builder.setFooter(this.getEmbedFooter());
         return builder;
     }
 

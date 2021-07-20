@@ -37,13 +37,13 @@ public class VariantCommand extends DefaultCommand {
                 assert textOption != null && signOption != null;
 
                 Variant.create(poll, nameOption.getAsString(), signOption.getAsString(), textOption.getAsString());
-                poll.rerender();
+                poll.updateLatestMessage();
                 event.getHook().sendMessage("Variant has been successfully created").queue();
                 break;
             case "delete":
                 Variant variant = Variant.get(nameOption.getAsString(), poll);
                 variant.delete();
-                poll.rerender();
+                poll.updateLatestMessage();
                 event.getHook().sendMessage("Variant has been successfully deleted").queue();
                 break;
         }
