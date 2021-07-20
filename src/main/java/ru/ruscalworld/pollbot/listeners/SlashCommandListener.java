@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ruscalworld.pollbot.PollBot;
+import ru.ruscalworld.pollbot.core.CommandException;
 import ru.ruscalworld.pollbot.core.commands.Command;
 
 import java.util.concurrent.CompletableFuture;
@@ -33,6 +34,8 @@ public class SlashCommandListener extends ListenerAdapter {
         CompletableFuture.runAsync(() -> {
             try {
                 command.onExecute(event);
+            } catch (CommandException exception) {
+                event.getHook().sendMessage(exception.getMessage()).queue();
             } catch (Exception exception) {
                 command.handleError(exception);
             }
