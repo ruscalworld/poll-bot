@@ -30,8 +30,8 @@
             <url>https://jitpack.io</url>
         </repository>
         <repository>
-            <id>ruscalworld-github</id>
-            <url>https://maven.pkg.github.com/ruscalworld/storagelib</url>
+            <id>ruscalworld-releases</id>
+            <url>https://maven.ruscalworld.ru/releases</url>
         </repository>
     </repositories>
 
@@ -104,7 +104,7 @@
         <dependency>
             <groupId>ru.ruscalworld</groupId>
             <artifactId>storagelib</artifactId>
-            <version>1.1.5</version>
+            <version>1.2.0</version>
         </dependency>
         <dependency>
             <groupId>com.vdurmont</groupId>
