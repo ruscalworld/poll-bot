@@ -6,7 +6,8 @@ import net.dv8tion.jda.api.entities.User;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
-import ru.ruscalworld.pollbot.core.CommandException;
+import ru.ruscalworld.pollbot.exceptions.CommandException;
+import ru.ruscalworld.pollbot.exceptions.NotFoundException;
 import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
 import ru.ruscalworld.storagelib.annotations.Model;
@@ -24,11 +25,11 @@ public class Variant extends DefaultModel {
     private long pollId;
     private Poll poll;
     @Property(column = "name")
-    private final String name;
+    private String name;
     @Property(column = "sign")
-    private final String sign;
+    private String sign;
     @Property(column = "description")
-    private final String description;
+    private String description;
 
     private @NotNull List<Vote> votes = new ArrayList<>();
     private boolean votesFetched;
@@ -37,7 +38,12 @@ public class Variant extends DefaultModel {
         this.poll = poll;
         this.name = name;
         this.sign = sign;
+        this.pollId = poll.getId();
         this.description = description;
+    }
+
+    public Variant() {
+
     }
 
     public static @Nullable Variant get(long id, Poll poll) throws Exception {
@@ -49,18 +55,39 @@ public class Variant extends DefaultModel {
         return variant;
     }
 
-    public static @NotNull Variant get(String name, Poll poll) throws Exception {
+    public static @NotNull Variant getByName(String name, Poll poll) throws Exception {
         Storage storage = PollBot.getInstance().getStorage();
-        List<Variant> variants = storage.findAll(Variant.class, Comparison.equal("name", name));
-        for (Variant variant : variants) {
-            variant.setPoll(poll);
-            if (variant.getName().equals(name)) return variant;
-        }
+        List<Variant> variants = storage.findAll(Variant.class, Condition.and(
+                Comparison.equal("name", name),
+                Comparison.equal("poll_id", poll.getId())
+        ));
 
-        throw new CommandException("Variant with this name does not exist");
+        if (variants.size() == 0) throw new NotFoundException("Variant with this name does not exist");
+        return variants.get(0);
+    }
+
+    public static @NotNull Variant getBySign(String sign, Poll poll) throws Exception {
+        Storage storage = PollBot.getInstance().getStorage();
+        List<Variant> variants = storage.findAll(Variant.class, Condition.and(
+                Comparison.equal("sign", sign),
+                Comparison.equal("poll_id", poll.getId())
+        ));
+
+        if (variants.size() == 0) throw new NotFoundException("Variant with this sign does not exist");
+        return variants.get(0);
     }
 
     public static Variant create(Poll poll, String name, String sign, String description) throws Exception {
+        try {
+            Variant.getByName(name, poll);
+            throw new CommandException("Variant with this name already exists in selected poll");
+        } catch (NotFoundException ignored) { }
+        try {
+            Variant.getBySign(sign, poll);
+            throw new CommandException("Variant with this sign already exists in selected poll");
+        } catch (NotFoundException ignored) { }
+        if (sign.contains(">")) throw new CommandException("Sorry, but custom emojis are not supported yet");
+
         Storage storage = PollBot.getInstance().getStorage();
         Variant variant = new Variant(poll, name, sign, description);
         storage.save(variant);
@@ -116,6 +143,9 @@ public class Variant extends DefaultModel {
     }
 
     public Poll getPoll() {
+        if (this.poll == null) try {
+            return Poll.get(this.pollId);
+        } catch (Exception ignored) { }
         return poll;
     }
 

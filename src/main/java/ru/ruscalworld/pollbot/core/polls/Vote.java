@@ -5,7 +5,7 @@ import net.dv8tion.jda.api.entities.User;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
-import ru.ruscalworld.pollbot.core.CommandException;
+import ru.ruscalworld.pollbot.exceptions.CommandException;
 import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
 import ru.ruscalworld.storagelib.annotations.Model;
@@ -17,20 +17,19 @@ import java.util.List;
 
 @Model(table = "votes")
 public class Vote extends DefaultModel {
-    @NotNull
     private Poll poll;
     @Property(column = "variant_id")
     private long variantId;
-    @NotNull private Variant variant;
+    private Variant variant;
     @Property(column = "member_id")
     private String memberId;
-    @NotNull private User member;
+    private User member;
     @Property(column = "reaction_id")
     private String reactionId;
     @Nullable
     private MessageReaction reaction;
     @Property(column = "created_at")
-    private final Timestamp createdAt;
+    private Timestamp createdAt;
 
     public Vote(Variant variant, @NotNull User member, @Nullable MessageReaction reaction, Timestamp createdAt) {
         this.poll = variant.getPoll();
@@ -39,6 +38,10 @@ public class Vote extends DefaultModel {
         this.memberId = member.getId();
         this.reaction = reaction;
         this.createdAt = createdAt;
+    }
+
+    public Vote() {
+
     }
 
     public static Vote create(Variant variant, User user) throws Exception {

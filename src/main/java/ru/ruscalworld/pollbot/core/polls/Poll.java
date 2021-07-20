@@ -6,13 +6,15 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
-import ru.ruscalworld.pollbot.core.CommandException;
+import ru.ruscalworld.pollbot.exceptions.CommandException;
+import ru.ruscalworld.pollbot.exceptions.NotFoundException;
 import ru.ruscalworld.pollbot.util.ProgressBar;
 import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
 import ru.ruscalworld.storagelib.annotations.Model;
 import ru.ruscalworld.storagelib.annotations.Property;
 import ru.ruscalworld.storagelib.builder.expressions.Comparison;
+import ru.ruscalworld.storagelib.builder.expressions.Condition;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -21,7 +23,7 @@ import java.util.List;
 @Model(table = "polls")
 public class Poll extends DefaultModel {
     @Property(column = "name")
-    private final String name;
+    private String name;
     @Property(column = "title")
     @Nullable private String title;
     @Property(column = "description")
@@ -29,7 +31,7 @@ public class Poll extends DefaultModel {
     @Property(column = "ends_at")
     @Nullable private Timestamp endsAt;
     @Property(column = "owner_id")
-    private final String ownerId;
+    private String ownerId;
     @Property(column = "message_id")
     private String messageId;
     @Property(column = "channel_id")
@@ -37,7 +39,7 @@ public class Poll extends DefaultModel {
     @Property(column = "guild_id")
     private String guildId;
     @Nullable private Message message;
-    @NotNull private final Member owner;
+    private Member owner;
     @Property(column = "allow_revote")
     private boolean allowRevote;
     @Property(column = "allow_multiple_choice")
@@ -56,6 +58,10 @@ public class Poll extends DefaultModel {
         this.ownerId = member.getId();
     }
 
+    public Poll() {
+
+    }
+
     public static boolean isPoll(Message message) {
         if (message.getReactions().size() == 0) return false;
         if (message.getEmbeds().size() != 1) return false;
@@ -65,7 +71,16 @@ public class Poll extends DefaultModel {
         return embed.getFields().size() != 0;
     }
 
-    public static Poll getFromMessage(Message message) throws Exception {
+    public static @Nullable Poll get(long id) throws Exception {
+        Storage storage = PollBot.getInstance().getStorage();
+        try {
+            return storage.retrieve(Poll.class, id);
+        } catch (NotFoundException exception) {
+            return null;
+        }
+    }
+
+    public static @Nullable Poll getFromMessage(Message message) throws Exception {
         if (!isPoll(message)) return null;
         Storage storage = PollBot.getInstance().getStorage();
         Poll poll = storage.find(Poll.class, "message_id", message.getId());
@@ -74,7 +89,20 @@ public class Poll extends DefaultModel {
         return poll;
     }
 
+    public static @Nullable Poll getByName(String name, Guild guild) throws Exception {
+        Storage storage = PollBot.getInstance().getStorage();
+        List<Poll> polls = storage.findAll(Poll.class, Condition.and(
+                Comparison.equal("name", name),
+                Comparison.equal("guild_id", guild.getId())
+        ));
+        if (polls.size() == 0) return null;
+        return polls.get(0);
+    }
+
     public static Poll create(String name, @NotNull Member owner) throws Exception {
+        Poll oldPoll = getByName(name, owner.getGuild());
+        if (oldPoll != null) throw new CommandException("Poll with this name already exists");
+
         Poll poll = new Poll(name, owner);
         poll.save();
         return poll;
@@ -186,7 +214,8 @@ public class Poll extends DefaultModel {
         }
 
         Storage storage = PollBot.getInstance().getStorage();
-        storage.save(this);
+        long id = storage.save(this);
+        this.setId(id);
     }
 
     public List<Vote> getVotes(User user) throws Exception {
@@ -208,7 +237,7 @@ public class Poll extends DefaultModel {
     }
 
     public @Nullable Variant getVariant(String name) throws Exception {
-        return Variant.get(name, this);
+        return Variant.getByName(name, this);
     }
 
     public boolean isMultipleChoiceAllowed() {

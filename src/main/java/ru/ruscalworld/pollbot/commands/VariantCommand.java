@@ -41,7 +41,7 @@ public class VariantCommand extends DefaultCommand {
                 event.getHook().sendMessage("Variant has been successfully created").queue();
                 break;
             case "delete":
-                Variant variant = Variant.get(nameOption.getAsString(), poll);
+                Variant variant = Variant.getByName(nameOption.getAsString(), poll);
                 variant.delete();
                 poll.updateLatestMessage();
                 event.getHook().sendMessage("Variant has been successfully deleted").queue();

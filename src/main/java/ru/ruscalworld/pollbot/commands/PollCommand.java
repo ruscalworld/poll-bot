@@ -1,13 +1,12 @@
 package ru.ruscalworld.pollbot.commands;
 
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import ru.ruscalworld.pollbot.PollBot;
-import ru.ruscalworld.pollbot.core.CommandException;
+import ru.ruscalworld.pollbot.exceptions.CommandException;
 import ru.ruscalworld.pollbot.core.polls.Poll;
 import ru.ruscalworld.pollbot.core.commands.DefaultCommand;
 import ru.ruscalworld.pollbot.core.sessions.Session;
