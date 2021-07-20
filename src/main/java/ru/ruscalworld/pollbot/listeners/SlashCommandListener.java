@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import ru.ruscalworld.pollbot.PollBot;
 import ru.ruscalworld.pollbot.core.Command;
 
+import java.util.concurrent.CompletableFuture;
+
 public class SlashCommandListener extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(SlashCommandListener.class);
 
@@ -28,11 +30,13 @@ public class SlashCommandListener extends ListenerAdapter {
 
         event.deferReply().queue();
 
-        try {
-            command.onExecute(event);
-        } catch (Exception exception) {
-            Logger logger = LoggerFactory.getLogger(command.getClass());
-            logger.error("Exception while handling command", exception);
-        }
+        CompletableFuture.runAsync(() -> {
+            try {
+                command.onExecute(event);
+            } catch (Exception exception) {
+                Logger logger = LoggerFactory.getLogger(command.getClass());
+                logger.error("Exception while handling command", exception);
+            }
+        });
     }
 }

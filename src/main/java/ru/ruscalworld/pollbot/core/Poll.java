@@ -1,9 +1,10 @@
-package ru.ruscalworld.pollbot;
+package ru.ruscalworld.pollbot.core;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import ru.ruscalworld.pollbot.PollBot;
 import ru.ruscalworld.pollbot.util.ProgressBar;
 import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
@@ -25,11 +26,16 @@ public class Poll extends DefaultModel {
     @Nullable private String description;
     @Property(column = "ends_at")
     @Nullable private Timestamp endsAt;
+    @Property(column = "owner_id")
+    private final String ownerId;
     @Property(column = "message_id")
     private String messageId;
     @Property(column = "channel_id")
     private String channelId;
+    @Property(column = "guild_id")
+    private String guildId;
     @Nullable private Message message;
+    @NotNull private final Member owner;
     @Property(column = "allow_revote")
     private boolean allowRevote;
     @Property(column = "allow_multiple_choice")
@@ -39,8 +45,11 @@ public class Poll extends DefaultModel {
 
     private final @NotNull List<Variant> variants = new ArrayList<>();
 
-    public Poll(String name) {
+    public Poll(String name, @NotNull Member member) {
         this.name = name;
+        this.owner = member;
+        this.guildId = member.getGuild().getId();
+        this.ownerId = member.getId();
     }
 
     public static boolean isPoll(Message message) {
@@ -61,8 +70,8 @@ public class Poll extends DefaultModel {
         return poll;
     }
 
-    public static Poll create(String name) throws Exception {
-        Poll poll = new Poll(name);
+    public static Poll create(String name, @NotNull Member owner) throws Exception {
+        Poll poll = new Poll(name, owner);
         poll.save();
         return poll;
     }
@@ -260,246 +269,19 @@ public class Poll extends DefaultModel {
         this.channelId = channelId;
     }
 
-    @Model(table = "variants")
-    public static class Variant extends DefaultModel {
-        @Property(column = "poll_id")
-        private long pollId;
-        private Poll poll;
-        @Property(column = "name")
-        private final String name;
-        @Property(column = "sign")
-        private final String sign;
-        @Property(column = "description")
-        private final String description;
-
-        private final @NotNull List<Vote> votes = new ArrayList<>();
-        private boolean votesFetched;
-
-        public Variant(Poll poll, String name, String sign, String description) {
-            this.poll = poll;
-            this.name = name;
-            this.sign = sign;
-            this.description = description;
-        }
-
-        public static @Nullable Variant get(long id, Poll poll) throws Exception {
-            Storage storage = PollBot.getInstance().getStorage();
-            Variant variant = storage.retrieve(Variant.class, id);
-            if (variant == null) return null;
-
-            variant.setPoll(poll);
-            return variant;
-        }
-
-        public static @Nullable Variant get(String name, Poll poll) throws Exception {
-            Storage storage = PollBot.getInstance().getStorage();
-            List<Variant> variants = storage.findAll(Variant.class, "name", name);
-            for (Variant variant : variants) {
-                variant.setPoll(poll);
-                if (variant.getName().equals(name)) return variant;
-            }
-
-            return null;
-        }
-
-        public static Variant create(Poll poll, String name, String sign, String description) throws Exception {
-            Storage storage = PollBot.getInstance().getStorage();
-            Variant variant = new Variant(poll, name, sign, description);
-            storage.save(variant);
-            return variant;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getSign() {
-            return sign;
-        }
-
-        public void fetchVotes() throws Exception {
-            List<Vote> votes = this.getVotes();
-            votes.clear();
-
-            Storage storage = PollBot.getInstance().getStorage();
-            List<Vote> storedVotes = storage.findAll(Vote.class, "variant_id", this.getId());
-
-            storedVotes.forEach(vote -> {
-                User user = PollBot.getInstance().getJDA().getUserById(vote.getMemberId());
-                vote.setMember(Objects.requireNonNull(user));
-                vote.setVariant(this);
-                votes.add(vote);
-            });
-        }
-
-        public @Nullable Vote vote(User user) throws Exception {
-            return Vote.create(this, user);
-        }
-
-        public MessageReaction getReaction(@Nullable Message message) {
-            if (message == null) return null;
-            if (!isPoll(message)) return null;
-            for (MessageReaction reaction : message.getReactions())
-                if (reaction.getReactionEmote().getEmoji().equals(this.getSign())) return reaction;
-            return null;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public Poll getPoll() {
-            return poll;
-        }
-
-        public void setPoll(Poll poll) {
-            this.poll = poll;
-        }
-
-        public @NotNull List<Vote> getVotes() throws Exception {
-            if (!this.isVotesFetched()) {
-                this.fetchVotes();
-                this.setVotesFetched(true);
-            }
-
-            return votes;
-        }
-
-        public boolean isVotesFetched() {
-            return votesFetched;
-        }
-
-        public void setVotesFetched(boolean votesFetched) {
-            this.votesFetched = votesFetched;
-        }
-
-        public long getPollId() {
-            return pollId;
-        }
-
-        public void setPollId(long pollId) {
-            this.pollId = pollId;
-        }
+    public Member getOwner() {
+        return owner;
     }
 
-    @Model(table = "votes")
-    public static class Vote extends DefaultModel {
-        @NotNull private Poll poll;
-        @Property(column = "variant_id")
-        private long variantId;
-        @NotNull private Variant variant;
-        @Property(column = "member_id")
-        private String memberId;
-        @NotNull private User member;
-        @Property(column = "reaction_id")
-        private String reactionId;
-        @Nullable private MessageReaction reaction;
-        @Property(column = "created_at")
-        private final Timestamp createdAt;
-
-        public Vote(Variant variant, @NotNull User member, @Nullable MessageReaction reaction, Timestamp createdAt) {
-            this.poll = variant.getPoll();
-            this.variant = variant;
-            this.member = member;
-            this.memberId = member.getId();
-            this.reaction = reaction;
-            this.createdAt = createdAt;
-        }
-
-        public static Vote create(Variant variant, User user) throws Exception {
-            Poll poll = variant.getPoll();
-
-            if (poll.getEndsAt() != null && poll.getEndsAt().before(new Timestamp(System.currentTimeMillis())))
-                throw new Error("This poll has ended, so you can't take part in it");
-
-            List<Vote> votes = poll.getVotes(user);
-
-            if (votes.size() > 0 && !poll.isRevoteAllowed()) {
-                List<String> variants = new ArrayList<>();
-                votes.forEach(vote -> variants.add(vote.getVariant().getDescription()));
-                throw new Error("Вы уже проголосовали за " + String.join(", ", variants) +
-                        " и не можете изменить свой выбор из-за настроек голосования");
-            }
-
-            if (!poll.isMultipleChoiceAllowed()) for (Vote vote : votes) vote.delete();
-
-            Storage storage = PollBot.getInstance().getStorage();
-            Vote vote = new Vote(variant, user, null, null);
-            storage.save(vote);
-
-            return vote;
-        }
-
-        public void delete() throws Exception {
-            Storage storage = PollBot.getInstance().getStorage();
-            storage.delete(this);
-
-            MessageReaction reaction = this.getReaction();
-            if (reaction == null) return;
-            reaction.removeReaction(this.getMember()).queue();
-        }
-
-        public @NotNull Poll getPoll() {
-            return poll;
-        }
-
-        public @NotNull Variant getVariant() {
-            return variant;
-        }
-
-        public @NotNull User getMember() {
-            return member;
-        }
-
-        public Timestamp getCreatedAt() {
-            return createdAt;
-        }
-
-        public @Nullable MessageReaction getReaction() {
-            return reaction;
-        }
-
-        public void setVariant(@NotNull Variant variant) {
-            this.poll = variant.getPoll();
-            this.variant = variant;
-        }
-
-        public void setMember(@NotNull User member) {
-            this.member = member;
-        }
-
-        public void setReaction(@Nullable MessageReaction reaction) {
-            this.reaction = reaction;
-        }
-
-        public long getVariantId() {
-            return variantId;
-        }
-
-        public String getMemberId() {
-            return memberId;
-        }
-
-        public void setMemberId(String memberId) {
-            this.memberId = memberId;
-        }
-
-        public void setVariantId(long variantId) {
-            this.variantId = variantId;
-        }
-
-        public String getReactionId() {
-            return reactionId;
-        }
-
-        public void setReactionId(String reactionId) {
-            this.reactionId = reactionId;
-        }
+    public String getGuildId() {
+        return guildId;
     }
 
-    public static class Error extends Exception {
-        public Error(String message) {
-            super(message);
-        }
+    public void setGuildId(String guildId) {
+        this.guildId = guildId;
+    }
+
+    public String getOwnerId() {
+        return ownerId;
     }
 }
