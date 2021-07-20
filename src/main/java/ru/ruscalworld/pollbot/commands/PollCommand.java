@@ -11,6 +11,7 @@ import ru.ruscalworld.pollbot.core.polls.Poll;
 import ru.ruscalworld.pollbot.core.commands.DefaultCommand;
 import ru.ruscalworld.pollbot.core.sessions.Session;
 import ru.ruscalworld.pollbot.core.sessions.SessionManager;
+import ru.ruscalworld.pollbot.exceptions.NotFoundException;
 
 public class PollCommand extends DefaultCommand {
     public PollCommand() {
@@ -36,6 +37,19 @@ public class PollCommand extends DefaultCommand {
                 break;
             case "anonymous":
             case "describe":
+                break;
+            case "select":
+                nameOption = event.getOption("name");
+                assert nameOption != null;
+                if (event.getGuild() == null) return;
+
+                poll = Poll.getByName(nameOption.getAsString(), event.getGuild());
+                if (poll == null) throw new NotFoundException("Poll with this name does not exist");
+                if (!poll.getOwnerId().equals(event.getMember().getId()))
+                    throw new CommandException("This poll was created by another member, and you can not edit it");
+
+                session.setSelectedPoll(poll);
+                event.getHook().sendMessage("You have successfully selected this poll").queue();
                 break;
             case "preview":
                 poll = ensurePollIsSelected(session);
@@ -67,6 +81,8 @@ public class PollCommand extends DefaultCommand {
                         .addOption(OptionType.STRING, "description", "New description of the poll", true),
                 new SubcommandData("anonymous", "Makes poll anonymous or not")
                         .addOption(OptionType.BOOLEAN, "value", "Should your poll be anonymous?", true),
+                new SubcommandData("select", "Selects a previously created poll to make you able to edit it")
+                        .addOption(OptionType.STRING, "name", "Name of the poll", true),
                 new SubcommandData("preview", "Sends a message for selected poll, so you can see how your poll will appear"),
                 new SubcommandData("publish", "Publishes selected poll")
         );
