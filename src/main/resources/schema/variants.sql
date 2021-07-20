@@ -1,1 +1,1 @@
-CREATE TABLE IF NOT EXISTS `poll_variants` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `poll_id` INT NOT NULL, `name` VARCHAR(50), `sign` VARCHAR(50), `title` VARCHAR(100), `description` TEXT);
+CREATE TABLE IF NOT EXISTS `variants` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `poll_id` INT NOT NULL, `name` VARCHAR(50), `sign` VARCHAR(50), `title` VARCHAR(100), `description` TEXT);

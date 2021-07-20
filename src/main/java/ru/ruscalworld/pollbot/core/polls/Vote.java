@@ -1,10 +1,11 @@
-package ru.ruscalworld.pollbot.core;
+package ru.ruscalworld.pollbot.core.polls;
 
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
+import ru.ruscalworld.pollbot.core.CommandException;
 import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
 import ru.ruscalworld.storagelib.annotations.Model;
@@ -44,14 +45,14 @@ public class Vote extends DefaultModel {
         Poll poll = variant.getPoll();
 
         if (poll.getEndsAt() != null && poll.getEndsAt().before(new Timestamp(System.currentTimeMillis())))
-            throw new PollError("This poll has ended, so you can't take part in it");
+            throw new CommandException("This poll has ended, so you can't take part in it");
 
         List<Vote> votes = poll.getVotes(user);
 
         if (votes.size() > 0 && !poll.isRevoteAllowed()) {
             List<String> variants = new ArrayList<>();
             votes.forEach(vote -> variants.add(vote.getVariant().getDescription()));
-            throw new PollError("Вы уже проголосовали за " + String.join(", ", variants) +
+            throw new CommandException("Вы уже проголосовали за " + String.join(", ", variants) +
                     " и не можете изменить свой выбор из-за настроек голосования");
         }
 

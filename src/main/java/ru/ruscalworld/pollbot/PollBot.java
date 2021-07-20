@@ -8,8 +8,11 @@ import net.dv8tion.jda.api.requests.restaction.CommandUpdateAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ruscalworld.pollbot.commands.PollCommand;
+import ru.ruscalworld.pollbot.commands.VariantCommand;
 import ru.ruscalworld.pollbot.config.Config;
-import ru.ruscalworld.pollbot.core.Command;
+import ru.ruscalworld.pollbot.core.commands.Command;
+import ru.ruscalworld.pollbot.core.sessions.MemorySessionManager;
+import ru.ruscalworld.pollbot.core.sessions.SessionManager;
 import ru.ruscalworld.pollbot.listeners.GuildListener;
 import ru.ruscalworld.pollbot.listeners.SlashCommandListener;
 import ru.ruscalworld.storagelib.Storage;
@@ -23,6 +26,7 @@ public class PollBot {
     private static PollBot instance;
 
     private final HashMap<String, Command> commands = new HashMap<>();
+    private SessionManager sessionManager;
     private final Config config;
     private Storage storage;
     private JDA jda;
@@ -64,7 +68,9 @@ public class PollBot {
     }
 
     public void onClientReady() {
+        this.setSessionManager(new MemorySessionManager());
         this.registerCommand(new PollCommand());
+        this.registerCommand(new VariantCommand());
         this.onCommandsReady();
     }
 
@@ -132,5 +138,13 @@ public class PollBot {
 
     protected void setStorage(Storage storage) {
         this.storage = storage;
+    }
+
+    public SessionManager getSessionManager() {
+        return sessionManager;
+    }
+
+    public void setSessionManager(SessionManager sessionManager) {
+        this.sessionManager = sessionManager;
     }
 }

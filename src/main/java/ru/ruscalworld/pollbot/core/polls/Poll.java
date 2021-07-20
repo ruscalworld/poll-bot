@@ -1,10 +1,11 @@
-package ru.ruscalworld.pollbot.core;
+package ru.ruscalworld.pollbot.core.polls;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
+import ru.ruscalworld.pollbot.core.CommandException;
 import ru.ruscalworld.pollbot.util.ProgressBar;
 import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
@@ -14,7 +15,6 @@ import ru.ruscalworld.storagelib.annotations.Property;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Model(table = "polls")
 public class Poll extends DefaultModel {
@@ -40,8 +40,10 @@ public class Poll extends DefaultModel {
     private boolean allowRevote;
     @Property(column = "allow_multiple_choice")
     private boolean allowMultipleChoice;
-    @Property(column = "is_anonymous")
+    @Property(column = "anonymous")
     private boolean anonymous;
+    @Property(column = "published")
+    private boolean published;
 
     private final @NotNull List<Variant> variants = new ArrayList<>();
 
@@ -77,20 +79,20 @@ public class Poll extends DefaultModel {
     }
 
     public void publish(TextChannel channel) throws Exception {
+        if (this.getVariants().size() < 2) throw new CommandException("You must add at least 2 variants");
+        if (this.isPublished()) throw new CommandException("This poll is already published");
+
         EmbedBuilder builder = this.getEmbed();
         Message message = channel.sendMessage(builder.build()).complete();
         for (Variant variant : this.getVariants()) message.addReaction(variant.getSign()).complete();
 
+        this.setPublished(true);
         this.setMessage(message);
-        this.setMessageId(message.getId());
-        this.setChannelId(channel.getId());
         this.save();
     }
 
     public void rerender() throws Exception {
         EmbedBuilder builder = this.getEmbed();
-        builder.setFooter(this.getEmbedFooter());
-        if (this.getEndsAt() != null) builder.setTimestamp(this.getEndsAt().toInstant());
         if (this.getMessage() != null) this.getMessage().editMessage(builder.build()).queue();
     }
 
@@ -132,7 +134,10 @@ public class Poll extends DefaultModel {
         int total = 0;
 
         for (Variant variant : this.getVariants()) {
-            List<User> currentMembers = variant.getReaction(this.getMessage()).retrieveUsers().complete();
+            MessageReaction reaction = variant.getReaction(this.getMessage());
+            if (reaction == null) continue;
+
+            List<User> currentMembers = reaction.retrieveUsers().complete();
             for (User currentMember : currentMembers) {
                 if (members.contains(currentMember.getId())) continue;
                 if (currentMember.isBot()) continue;
@@ -283,5 +288,13 @@ public class Poll extends DefaultModel {
 
     public String getOwnerId() {
         return ownerId;
+    }
+
+    public boolean isPublished() {
+        return published;
+    }
+
+    public void setPublished(boolean published) {
+        this.published = published;
     }
 }

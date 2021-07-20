@@ -6,8 +6,12 @@ import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
-import ru.ruscalworld.pollbot.core.Poll;
-import ru.ruscalworld.pollbot.core.DefaultCommand;
+import ru.ruscalworld.pollbot.PollBot;
+import ru.ruscalworld.pollbot.core.CommandException;
+import ru.ruscalworld.pollbot.core.polls.Poll;
+import ru.ruscalworld.pollbot.core.commands.DefaultCommand;
+import ru.ruscalworld.pollbot.core.sessions.Session;
+import ru.ruscalworld.pollbot.core.sessions.SessionManager;
 
 public class PollCommand extends DefaultCommand {
     public PollCommand() {
@@ -16,32 +20,54 @@ public class PollCommand extends DefaultCommand {
 
     @Override
     public void onExecute(SlashCommandEvent event) throws Exception {
+        if (event.getMember() == null) return;
         if (event.getSubcommandName() == null) return;
+
+        SessionManager sessionManager = PollBot.getInstance().getSessionManager();
+        Session session = sessionManager.getMemberSession(event.getMember());
+
         switch (event.getSubcommandName()) {
             case "create":
                 OptionMapping nameOption = event.getOption("name");
-                assert nameOption != null && event.getMember() != null;
+                assert nameOption != null;
                 Poll poll = Poll.create(nameOption.getAsString(), event.getMember());
 
                 Message message = event.getHook().sendMessageEmbeds(poll.getEmbed().build()).complete();
                 poll.setMessage(message);
                 poll.save();
+
+                session.setSelectedPoll(poll);
                 break;
             case "anonymous":
             case "describe":
                 break;
+            case "publish":
+                poll = ensurePollIsSelected(session);
+                poll.publish(event.getTextChannel());
+                event.getHook().sendMessage("Your poll has been published to " + event.getTextChannel().getAsMention()).queue();
+                break;
         }
+    }
+
+    public static Poll ensurePollIsSelected(Session session) throws CommandException {
+        if (session.getSelectedPoll() == null) throw new CommandException("Please select a poll using /poll select");
+        return session.getSelectedPoll();
+    }
+
+    public static void ensurePollIsEditable(Poll poll) throws CommandException {
+        if (poll.isPublished()) throw new CommandException("This poll is published and cannot be edited");
     }
 
     @Override
     public CommandData getCommandData() {
         return super.getCommandData().addSubcommands(
                 new SubcommandData("create", "Creates a poll")
-                        .addOption(OptionType.STRING, "name", "Name of the poll"),
+                        .addOption(OptionType.STRING, "name", "Name of the poll", true),
                 new SubcommandData("describe", "Changes description of the poll")
-                        .addOption(OptionType.STRING, "description", "New description of the poll"),
+                        .addOption(OptionType.STRING, "description", "New description of the poll", true),
                 new SubcommandData("anonymous", "Makes poll anonymous or not")
-                        .addOption(OptionType.BOOLEAN, "value", "Should your poll be anonymous?")
+                        .addOption(OptionType.BOOLEAN, "value", "Should your poll be anonymous?", true),
+                new SubcommandData("publish", "Publishes selected poll")
         );
     }
 }

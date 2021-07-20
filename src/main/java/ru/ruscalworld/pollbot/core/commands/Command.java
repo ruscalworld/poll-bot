@@ -1,4 +1,4 @@
-package ru.ruscalworld.pollbot.core;
+package ru.ruscalworld.pollbot.core.commands;
 
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -8,4 +8,5 @@ public interface Command {
     void onPreRegister(CommandData data);
     void onExecute(SlashCommandEvent event) throws Exception;
     boolean isGlobal();
+    void handleError(Throwable throwable);
 }

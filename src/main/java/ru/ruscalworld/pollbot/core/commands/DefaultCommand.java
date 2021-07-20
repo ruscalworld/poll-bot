@@ -1,6 +1,8 @@
-package ru.ruscalworld.pollbot.core;
+package ru.ruscalworld.pollbot.core.commands;
 
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class DefaultCommand implements Command {
     private final String name;
@@ -19,6 +21,12 @@ public abstract class DefaultCommand implements Command {
 
     @Override
     public void onPreRegister(CommandData data) {}
+
+    @Override
+    public void handleError(Throwable throwable) {
+        Logger logger = LoggerFactory.getLogger(this.getClass());
+        logger.error("Exception while handling command", throwable);
+    }
 
     public String getName() {
         return name;
