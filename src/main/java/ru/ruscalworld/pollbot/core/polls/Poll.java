@@ -109,6 +109,8 @@ public class Poll extends DefaultModel {
     }
 
     public void preview(InteractionHook hook) throws Exception {
+        if (this.isPublished()) throw new CommandException("This poll is already published and cannot be previewed");
+
         Message message = hook.sendMessageEmbeds(this.getEmbed().build()).complete();
         if (this.getMessage() != null) {
             this.getMessage().editMessage("Sorry, but bot can handle only one poll message. " +
