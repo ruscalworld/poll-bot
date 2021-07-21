@@ -1,5 +1,6 @@
 package ru.ruscalworld.pollbot.core.polls;
 
+import com.vdurmont.emoji.EmojiParser;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
@@ -80,6 +81,8 @@ public class Variant extends DefaultModel {
     }
 
     public static Variant create(Poll poll, String name, String sign, @Nullable String description, String title) throws Exception {
+        List<String> emojis = EmojiParser.extractEmojis(sign);
+        if (emojis.size() == 0) throw new CommandException("Sign must be an emoji. Custom emojis are not supported.");
         try {
             Variant.getByName(name, poll);
             throw new CommandException("Variant with this name already exists in selected poll");
@@ -88,10 +91,9 @@ public class Variant extends DefaultModel {
             Variant.getBySign(sign, poll);
             throw new CommandException("Variant with this sign already exists in selected poll");
         } catch (NotFoundException ignored) { }
-        if (sign.contains(">")) throw new CommandException("Sorry, but custom emojis are not supported yet");
 
         Storage storage = PollBot.getInstance().getStorage();
-        Variant variant = new Variant(poll, name, sign, title);
+        Variant variant = new Variant(poll, name, emojis.get(0), title);
         variant.setDescription(description);
         storage.save(variant);
         variant.getPoll().getVariants().add(variant);
