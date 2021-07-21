@@ -23,7 +23,7 @@ public abstract class DefaultCommand implements Command {
     public void onPreRegister(CommandData data) {}
 
     @Override
-    public void handleError(Throwable throwable) {
+    public void onError(Throwable throwable) {
         Logger logger = LoggerFactory.getLogger(this.getClass());
         logger.error("Exception while handling command", throwable);
     }

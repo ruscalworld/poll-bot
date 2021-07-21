@@ -1,13 +1,16 @@
 package ru.ruscalworld.pollbot.core.polls;
 
 import com.vdurmont.emoji.EmojiParser;
+import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageReaction;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.components.Button;
+import net.dv8tion.jda.api.interactions.components.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
-import ru.ruscalworld.pollbot.exceptions.CommandException;
+import ru.ruscalworld.pollbot.exceptions.InteractionException;
 import ru.ruscalworld.pollbot.exceptions.NotFoundException;
 import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
@@ -49,13 +52,31 @@ public class Variant extends DefaultModel {
 
     }
 
-    public static @Nullable Variant get(long id, Poll poll) throws Exception {
-        Storage storage = PollBot.getInstance().getStorage();
-        Variant variant = storage.retrieve(Variant.class, id);
-        if (variant == null) return null;
+    public static @Nullable Variant get(long id) {
+        try {
+            Storage storage = PollBot.getInstance().getStorage();
+            Variant variant = storage.retrieve(Variant.class, id);
+            if (variant == null) return null;
 
-        variant.setPoll(poll);
-        return variant;
+            Poll poll = Poll.get(variant.getPollId());
+            variant.setPoll(poll);
+            return variant;
+        } catch (Exception exception) {
+            return null;
+        }
+    }
+
+    public static @Nullable Variant get(long id, Poll poll) {
+        try {
+            Storage storage = PollBot.getInstance().getStorage();
+            Variant variant = storage.retrieve(Variant.class, id);
+            if (variant == null) return null;
+
+            variant.setPoll(poll);
+            return variant;
+        } catch (Exception exception) {
+            return null;
+        }
     }
 
     public static @NotNull Variant getByName(String name, Poll poll) throws Exception {
@@ -82,14 +103,14 @@ public class Variant extends DefaultModel {
 
     public static Variant create(Poll poll, String name, String sign, @Nullable String description, String title) throws Exception {
         List<String> emojis = EmojiParser.extractEmojis(sign);
-        if (emojis.size() == 0) throw new CommandException("Sign must be an emoji. Custom emojis are not supported.");
+        if (emojis.size() == 0) throw new InteractionException("Sign must be an emoji. Custom emojis are not supported.");
         try {
             Variant.getByName(name, poll);
-            throw new CommandException("Variant with this name already exists in selected poll");
+            throw new InteractionException("Variant with this name already exists in selected poll");
         } catch (NotFoundException ignored) { }
         try {
             Variant.getBySign(sign, poll);
-            throw new CommandException("Variant with this sign already exists in selected poll");
+            throw new InteractionException("Variant with this sign already exists in selected poll");
         } catch (NotFoundException ignored) { }
 
         Storage storage = PollBot.getInstance().getStorage();
@@ -118,10 +139,7 @@ public class Variant extends DefaultModel {
     public void fetchVotes() throws Exception {
         List<Vote> votes = new ArrayList<>();
 
-        Storage storage = PollBot.getInstance().getStorage();
-        List<Vote> storedVotes = storage.findAll(Vote.class, Comparison.equal("variant_id", this.getId()));
-
-        storedVotes.forEach(vote -> {
+        Vote.getByVariant(this).forEach(vote -> {
             User user = PollBot.getInstance().getJDA().getUserById(vote.getMemberId());
             vote.setMember(Objects.requireNonNull(user));
             vote.setVariant(this);
@@ -143,13 +161,17 @@ public class Variant extends DefaultModel {
         return null;
     }
 
+    public Component makeButton() {
+        return Button.secondary("vote " + this.getId(), Emoji.ofUnicode(this.getSign()));
+    }
+
     public @Nullable String getDescription() {
         return description;
     }
 
     public Poll getPoll() {
         if (this.poll == null) try {
-            return Poll.get(this.pollId);
+            this.poll = Poll.get(this.pollId);
         } catch (Exception ignored) { }
         return poll;
     }

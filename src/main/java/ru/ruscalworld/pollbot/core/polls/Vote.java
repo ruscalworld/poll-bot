@@ -5,11 +5,12 @@ import net.dv8tion.jda.api.entities.User;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
-import ru.ruscalworld.pollbot.exceptions.CommandException;
+import ru.ruscalworld.pollbot.exceptions.InteractionException;
 import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
 import ru.ruscalworld.storagelib.annotations.Model;
 import ru.ruscalworld.storagelib.annotations.Property;
+import ru.ruscalworld.storagelib.builder.expressions.Comparison;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ public class Vote extends DefaultModel {
     public Vote(Variant variant, @NotNull User member, @Nullable MessageReaction reaction, Timestamp createdAt) {
         this.poll = variant.getPoll();
         this.variant = variant;
+        this.variantId = variant.getId();
         this.member = member;
         this.memberId = member.getId();
         this.reaction = reaction;
@@ -48,15 +50,15 @@ public class Vote extends DefaultModel {
         Poll poll = variant.getPoll();
 
         if (poll.getEndsAt() != null && poll.getEndsAt().before(new Timestamp(System.currentTimeMillis())))
-            throw new CommandException("This poll has ended, so you can't take part in it");
+            throw new InteractionException("This poll has ended, so you can't take part in it");
 
         List<Vote> votes = poll.getVotes(user);
 
         if (votes.size() > 0 && !poll.isRevoteAllowed()) {
             List<String> variants = new ArrayList<>();
-            votes.forEach(vote -> variants.add(vote.getVariant().getDescription()));
-            throw new CommandException("Вы уже проголосовали за " + String.join(", ", variants) +
-                    " и не можете изменить свой выбор из-за настроек голосования");
+            votes.forEach(vote -> variants.add(vote.getVariant().getTitle()));
+            throw new InteractionException("You have already voted for " + String.join(", ", variants) +
+                    " and you can not change your choice because of poll settings");
         }
 
         if (!poll.isMultipleChoiceAllowed()) for (Vote vote : votes) vote.delete();
@@ -66,6 +68,11 @@ public class Vote extends DefaultModel {
         storage.save(vote);
 
         return vote;
+    }
+
+    public static List<Vote> getByVariant(Variant variant) throws Exception {
+        Storage storage = PollBot.getInstance().getStorage();
+        return storage.findAll(Vote.class, Comparison.equal("variant_id", variant.getId()));
     }
 
     public void delete() throws Exception {
@@ -81,7 +88,10 @@ public class Vote extends DefaultModel {
         return poll;
     }
 
-    public @NotNull Variant getVariant() {
+    public Variant getVariant() {
+        if (this.variant == null) try {
+            this.variant = Variant.get(this.variantId);
+        } catch (Exception ignored) { }
         return variant;
     }
 

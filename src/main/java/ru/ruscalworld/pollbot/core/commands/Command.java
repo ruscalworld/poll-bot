@@ -7,6 +7,6 @@ public interface Command {
     CommandData getCommandData();
     void onPreRegister(CommandData data);
     void onExecute(SlashCommandEvent event) throws Exception;
+    void onError(Throwable throwable);
     boolean isGlobal();
-    void handleError(Throwable throwable);
 }

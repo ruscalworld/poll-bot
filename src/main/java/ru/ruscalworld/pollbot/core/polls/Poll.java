@@ -3,10 +3,12 @@ package ru.ruscalworld.pollbot.core.polls;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
-import ru.ruscalworld.pollbot.exceptions.CommandException;
+import ru.ruscalworld.pollbot.exceptions.InteractionException;
 import ru.ruscalworld.pollbot.exceptions.NotFoundException;
 import ru.ruscalworld.pollbot.util.ProgressBar;
 import ru.ruscalworld.storagelib.DefaultModel;
@@ -18,6 +20,7 @@ import ru.ruscalworld.storagelib.builder.expressions.Condition;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 @Model(table = "polls")
@@ -101,7 +104,7 @@ public class Poll extends DefaultModel {
 
     public static Poll create(String name, @NotNull Member owner) throws Exception {
         Poll oldPoll = getByName(name, owner.getGuild());
-        if (oldPoll != null) throw new CommandException("Poll with this name already exists");
+        if (oldPoll != null) throw new InteractionException("Poll with this name already exists");
 
         Poll poll = new Poll(name, owner);
         poll.save();
@@ -109,7 +112,7 @@ public class Poll extends DefaultModel {
     }
 
     public void preview(InteractionHook hook) throws Exception {
-        if (this.isPublished()) throw new CommandException("This poll is already published and cannot be previewed");
+        if (this.isPublished()) throw new InteractionException("This poll is already published and cannot be previewed");
 
         Message message = hook.sendMessageEmbeds(this.getEmbed().build()).complete();
         if (this.getMessage() != null) {
@@ -124,12 +127,14 @@ public class Poll extends DefaultModel {
 
     public void publish(TextChannel channel) throws Exception {
         this.fetchVariants();
-        if (this.getVariants().size() < 2) throw new CommandException("You must add at least 2 variants");
-        if (this.isPublished()) throw new CommandException("This poll is already published");
+        if (this.getVariants().size() < 2) throw new InteractionException("You must add at least 2 variants");
+        if (this.isPublished()) throw new InteractionException("This poll is already published");
+
+        List<Component> buttons = new ArrayList<>();
+        for (Variant variant : this.getVariants()) buttons.add(variant.makeButton());
 
         EmbedBuilder builder = this.getEmbed();
-        Message message = channel.sendMessage(builder.build()).complete();
-        for (Variant variant : this.getVariants()) message.addReaction(variant.getSign()).complete();
+        Message message = channel.sendMessage(builder.build()).setActionRows(ActionRow.of(buttons)).complete();
 
         this.setPublished(true);
         this.setMessage(message);
@@ -140,7 +145,7 @@ public class Poll extends DefaultModel {
         if (this.getMessage() != null) this.getMessage().editMessage(this.getEmbed().build()).queue();
     }
 
-    private String getEmbedFooter() {
+    private String getEmbedFooter() throws Exception {
         int memberCount = this.getMemberCount();
         return memberCount + " participants" +
                 (this.isAnonymous() ? " • " + "Anonymous poll" : "") +
@@ -156,6 +161,7 @@ public class Poll extends DefaultModel {
         builder.setDescription(this.getDescription());
 
         for (Variant variant : this.getVariants()) {
+            variant.fetchVotes();
             float percentage = totalVotes > 0 ? (float) Math.round((float) variant.getVotes().size() / (float) totalVotes * 1000) / 10 : 0;
             String name = variant.getSign() + " • " + variant.getTitle();
             String value = (variant.getDescription() != null ? variant.getDescription() + "\n" : "") +
@@ -174,25 +180,16 @@ public class Poll extends DefaultModel {
         return total;
     }
 
-    public int getMemberCount() {
+    public int getMemberCount() throws Exception {
         if (this.getMessage() == null) return 0;
-        List<String> members = new ArrayList<>();
-        int total = 0;
+        HashSet<String> members = new HashSet<>();
 
         for (Variant variant : this.getVariants()) {
-            MessageReaction reaction = variant.getReaction(this.getMessage());
-            if (reaction == null) continue;
-
-            List<User> currentMembers = reaction.retrieveUsers().complete();
-            for (User currentMember : currentMembers) {
-                if (members.contains(currentMember.getId())) continue;
-                if (currentMember.isBot()) continue;
-                members.add(currentMember.getId());
-                total++;
-            }
+            variant.fetchVotes();
+            for (Vote vote : variant.getVotes()) members.add(vote.getMemberId());
         }
 
-        return total;
+        return members.size();
     }
 
     public @NotNull List<Variant> getVariants() {
@@ -237,7 +234,7 @@ public class Poll extends DefaultModel {
         return votes;
     }
 
-    public @Nullable Variant getVariant(long id) throws Exception {
+    public @Nullable Variant getVariant(long id) {
         return Variant.get(id, this);
     }
 
@@ -270,6 +267,13 @@ public class Poll extends DefaultModel {
     }
 
     public @Nullable Message getMessage() {
+        if (message == null) {
+            TextChannel channel = PollBot.getInstance().getJDA().getTextChannelById(this.getChannelId());
+            if (channel == null) return null;
+            MessageHistory history = channel.getHistoryAround(this.getMessageId(), 1).complete();
+            this.message = history.getMessageById(this.getMessageId());
+        }
+
         return message;
     }
 

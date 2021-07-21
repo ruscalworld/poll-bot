@@ -11,8 +11,11 @@ import ru.ruscalworld.pollbot.commands.PollCommand;
 import ru.ruscalworld.pollbot.commands.VariantCommand;
 import ru.ruscalworld.pollbot.config.Config;
 import ru.ruscalworld.pollbot.core.commands.Command;
+import ru.ruscalworld.pollbot.core.interactions.InteractionHandler;
 import ru.ruscalworld.pollbot.core.sessions.MemorySessionManager;
 import ru.ruscalworld.pollbot.core.sessions.SessionManager;
+import ru.ruscalworld.pollbot.interactions.VoteInteraction;
+import ru.ruscalworld.pollbot.listeners.ButtonListener;
 import ru.ruscalworld.pollbot.listeners.GuildListener;
 import ru.ruscalworld.pollbot.listeners.SlashCommandListener;
 import ru.ruscalworld.storagelib.Storage;
@@ -25,6 +28,7 @@ public class PollBot {
     private static final Logger logger = LoggerFactory.getLogger(PollBot.class);
     private static PollBot instance;
 
+    private final HashMap<String, InteractionHandler> interactionHandlers = new HashMap<>();
     private final HashMap<String, Command> commands = new HashMap<>();
     private SessionManager sessionManager;
     private final Config config;
@@ -51,10 +55,15 @@ public class PollBot {
         this.getCommands().put(name, command);
     }
 
+    public void registerInteractionHandler(InteractionHandler handler) {
+        this.getInteractionHandlers().put(handler.getName(), handler);
+    }
+
     public void onStart() {
         JDABuilder builder = JDABuilder.createDefault(this.getConfig().getBotToken());
 
         builder.addEventListeners(new GuildListener());
+        builder.addEventListeners(new ButtonListener());
         builder.addEventListeners(new SlashCommandListener());
 
         try {
@@ -69,6 +78,7 @@ public class PollBot {
 
     public void onClientReady() {
         this.setSessionManager(new MemorySessionManager());
+        this.registerInteractionHandler(new VoteInteraction());
         this.registerCommand(new PollCommand());
         this.registerCommand(new VariantCommand());
         this.onCommandsReady();
@@ -146,5 +156,9 @@ public class PollBot {
 
     public void setSessionManager(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
+    }
+
+    public HashMap<String, InteractionHandler> getInteractionHandlers() {
+        return interactionHandlers;
     }
 }

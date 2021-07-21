@@ -6,7 +6,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import ru.ruscalworld.pollbot.PollBot;
-import ru.ruscalworld.pollbot.exceptions.CommandException;
+import ru.ruscalworld.pollbot.exceptions.InteractionException;
 import ru.ruscalworld.pollbot.core.polls.Poll;
 import ru.ruscalworld.pollbot.core.commands.DefaultCommand;
 import ru.ruscalworld.pollbot.core.sessions.Session;
@@ -46,7 +46,7 @@ public class PollCommand extends DefaultCommand {
                 poll = Poll.getByName(nameOption.getAsString(), event.getGuild());
                 if (poll == null) throw new NotFoundException("Poll with this name does not exist");
                 if (!poll.getOwnerId().equals(event.getMember().getId()))
-                    throw new CommandException("This poll was created by another member, and you can not edit it");
+                    throw new InteractionException("This poll was created by another member, and you can not edit it");
 
                 session.setSelectedPoll(poll);
                 event.getHook().sendMessage("You have successfully selected this poll").queue();
@@ -63,13 +63,13 @@ public class PollCommand extends DefaultCommand {
         }
     }
 
-    public static Poll ensurePollIsSelected(Session session) throws CommandException {
-        if (session.getSelectedPoll() == null) throw new CommandException("Please select a poll using /poll select");
+    public static Poll ensurePollIsSelected(Session session) throws InteractionException {
+        if (session.getSelectedPoll() == null) throw new InteractionException("Please select a poll using /poll select");
         return session.getSelectedPoll();
     }
 
-    public static void ensurePollIsEditable(Poll poll) throws CommandException {
-        if (poll.isPublished()) throw new CommandException("This poll is published and cannot be edited");
+    public static void ensurePollIsEditable(Poll poll) throws InteractionException {
+        if (poll.isPublished()) throw new InteractionException("This poll is published and cannot be edited");
     }
 
     @Override
