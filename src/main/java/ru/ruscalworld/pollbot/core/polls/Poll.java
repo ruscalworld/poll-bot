@@ -121,6 +121,7 @@ public class Poll extends DefaultModel {
     }
 
     public void publish(TextChannel channel) throws Exception {
+        this.fetchVariants();
         if (this.getVariants().size() < 2) throw new CommandException("You must add at least 2 variants");
         if (this.isPublished()) throw new CommandException("This poll is already published");
 
