@@ -54,14 +54,15 @@ public class Vote extends DefaultModel {
 
         List<Vote> votes = poll.getVotes(user);
 
-        if (votes.size() > 0 && !poll.isRevoteAllowed()) {
+        if (votes.size() >= poll.getVotesPerUser() && !poll.isRevoteAllowed()) {
             List<String> variants = new ArrayList<>();
             votes.forEach(vote -> variants.add(vote.getVariant().getTitle()));
             throw new InteractionException("You have already voted for " + String.join(", ", variants) +
                     " and you can not change your choice because of poll settings");
         }
 
-        if (!poll.isMultipleChoiceAllowed()) for (Vote vote : votes) vote.delete();
+        if (votes.size() >= poll.getVotesPerUser())
+            throw new InteractionException("Only up to " + poll.getVotesPerUser() + " votes per user allowed in this poll");
 
         Storage storage = PollBot.getInstance().getStorage();
         Vote vote = new Vote(variant, user, null, null);

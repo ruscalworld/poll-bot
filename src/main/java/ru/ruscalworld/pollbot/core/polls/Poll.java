@@ -45,8 +45,8 @@ public class Poll extends DefaultModel {
     private Member owner;
     @Property(column = "allow_revote")
     private boolean allowRevote;
-    @Property(column = "allow_multiple_choice")
-    private boolean allowMultipleChoice;
+    @Property(column = "votes_per_user")
+    private int votesPerUser;
     @Property(column = "anonymous")
     private boolean anonymous;
     @Property(column = "published")
@@ -149,7 +149,7 @@ public class Poll extends DefaultModel {
         int memberCount = this.getMemberCount();
         return memberCount + " participants" +
                 (this.isAnonymous() ? " • " + "Anonymous poll" : "") +
-                (this.isMultipleChoiceAllowed() ? " • " + "Multiple choice allowed" : "") +
+                (this.isMultipleChoiceAllowed() ? " • " + this.getVotesPerUser() + " votes per user" : "") +
                 (!this.isRevoteAllowed() ? " • " + "Revoting is disabled" : "");
     }
 
@@ -243,11 +243,15 @@ public class Poll extends DefaultModel {
     }
 
     public boolean isMultipleChoiceAllowed() {
-        return this.allowMultipleChoice;
+        return this.getVotesPerUser() > 0;
     }
 
-    public void setMultipleChoiceAllowed(boolean multipleChoice) {
-        this.allowMultipleChoice = multipleChoice;
+    public int getVotesPerUser() {
+        return this.votesPerUser;
+    }
+
+    public void setVotesPerUser(int votesPerUser) {
+        this.votesPerUser = votesPerUser;
     }
 
     public @Nullable String getDescription() {
@@ -267,7 +271,7 @@ public class Poll extends DefaultModel {
     }
 
     public @Nullable Message getMessage() {
-        if (message == null) {
+        if (message == null && this.getMessageId() != null) {
             TextChannel channel = PollBot.getInstance().getJDA().getTextChannelById(this.getChannelId());
             if (channel == null) return null;
             MessageHistory history = channel.getHistoryAround(this.getMessageId(), 1).complete();

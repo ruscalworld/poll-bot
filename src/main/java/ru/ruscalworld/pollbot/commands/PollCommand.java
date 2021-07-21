@@ -35,6 +35,17 @@ public class PollCommand extends DefaultCommand {
                 poll.preview(event.getHook());
                 session.setSelectedPoll(poll);
                 break;
+            case "limit":
+                OptionMapping valueOption = event.getOption("value");
+                assert valueOption != null;
+                poll = ensurePollIsSelected(session);
+                ensurePollIsEditable(poll);
+                if (valueOption.getAsLong() < 1) throw new InteractionException("Minimum value for limit is 1");
+
+                poll.setVotesPerUser(((int) valueOption.getAsLong()));
+                poll.save();
+                poll.updateLatestMessage();
+                event.getHook().sendMessage("Amount of maximum votes per user has been changed to " + poll.getVotesPerUser()).queue();
             case "anonymous":
             case "describe":
                 break;
@@ -81,6 +92,8 @@ public class PollCommand extends DefaultCommand {
                         .addOption(OptionType.STRING, "description", "New description of the poll", true),
                 new SubcommandData("anonymous", "Makes poll anonymous or not")
                         .addOption(OptionType.BOOLEAN, "value", "Should your poll be anonymous?", true),
+                new SubcommandData("limit", "Sets limit for amount of votes per user")
+                        .addOption(OptionType.INTEGER, "value", "Maximum votes per user", true),
                 new SubcommandData("select", "Selects a previously created poll to make you able to edit it")
                         .addOption(OptionType.STRING, "name", "Name of the poll", true),
                 new SubcommandData("preview", "Sends a message for selected poll, so you can see how your poll will appear"),
