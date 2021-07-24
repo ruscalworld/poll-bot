@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import ru.ruscalworld.pollbot.PollBot;
+import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 import ru.ruscalworld.pollbot.exceptions.InteractionException;
 import ru.ruscalworld.pollbot.core.polls.Poll;
 import ru.ruscalworld.pollbot.core.commands.DefaultCommand;
@@ -20,11 +21,13 @@ public class PollCommand extends DefaultCommand {
 
     @Override
     public void onExecute(SlashCommandEvent event) throws Exception {
+        if (event.getGuild() == null) return;
         if (event.getMember() == null) return;
         if (event.getSubcommandName() == null) return;
 
         SessionManager sessionManager = PollBot.getInstance().getSessionManager();
         Session session = sessionManager.getMemberSession(event.getMember());
+        GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
 
         switch (event.getSubcommandName()) {
             case "create":
@@ -38,14 +41,14 @@ public class PollCommand extends DefaultCommand {
             case "limit":
                 OptionMapping valueOption = event.getOption("value");
                 assert valueOption != null;
-                poll = ensurePollIsSelected(session);
-                ensurePollIsEditable(poll);
-                if (valueOption.getAsLong() < 1) throw new InteractionException("Minimum value for limit is 1");
+                poll = ensurePollIsSelected(session, settings);
+                ensurePollIsEditable(poll, settings);
+                if (valueOption.getAsLong() < 1) throw new InteractionException(settings.translate("responses.poll.per-user-limit.min", 1));
 
                 poll.setVotesPerUser(((int) valueOption.getAsLong()));
                 poll.save();
                 poll.updateLatestMessage();
-                event.getHook().sendMessage("Amount of maximum votes per user has been changed to " + poll.getVotesPerUser()).queue();
+                event.getHook().sendMessage(settings.translate("responses.poll.per-user-limit.success", poll.getVotesPerUser())).queue();
             case "anonymous":
             case "describe":
                 break;
@@ -55,32 +58,32 @@ public class PollCommand extends DefaultCommand {
                 if (event.getGuild() == null) return;
 
                 poll = Poll.getByName(nameOption.getAsString(), event.getGuild());
-                if (poll == null) throw new NotFoundException("Poll with this name does not exist");
+                if (poll == null) throw new NotFoundException(settings.translate("responses.poll.generic.unknown"));
                 if (!poll.getOwnerId().equals(event.getMember().getId()))
-                    throw new InteractionException("This poll was created by another member, and you can not edit it");
+                    throw new InteractionException(settings.translate("responses.poll.generic.not-owner"));
 
                 session.setSelectedPoll(poll);
-                event.getHook().sendMessage("You have successfully selected this poll").queue();
+                event.getHook().sendMessage(settings.translate("responses.poll.select.success")).queue();
                 break;
             case "preview":
-                poll = ensurePollIsSelected(session);
+                poll = ensurePollIsSelected(session, settings);
                 poll.preview(event.getHook());
                 break;
             case "publish":
-                poll = ensurePollIsSelected(session);
+                poll = ensurePollIsSelected(session, settings);
                 poll.publish(event.getTextChannel());
-                event.getHook().sendMessage("Your poll has been published to " + event.getTextChannel().getAsMention()).queue();
+                event.getHook().sendMessage(settings.translate("responses.poll.publish.success", event.getTextChannel().getAsMention())).queue();
                 break;
         }
     }
 
-    public static Poll ensurePollIsSelected(Session session) throws InteractionException {
-        if (session.getSelectedPoll() == null) throw new InteractionException("Please select a poll using /poll select");
+    public static Poll ensurePollIsSelected(Session session, GuildSettings settings) throws InteractionException {
+        if (session.getSelectedPoll() == null) throw new InteractionException(settings.translate("responses.poll.generic.not-selected"));
         return session.getSelectedPoll();
     }
 
-    public static void ensurePollIsEditable(Poll poll) throws InteractionException {
-        if (poll.isPublished()) throw new InteractionException("This poll is published and cannot be edited");
+    public static void ensurePollIsEditable(Poll poll, GuildSettings settings) throws InteractionException {
+        if (poll.isPublished()) throw new InteractionException(settings.translate("responses.poll.generic.not-editable"));
     }
 
     @Override

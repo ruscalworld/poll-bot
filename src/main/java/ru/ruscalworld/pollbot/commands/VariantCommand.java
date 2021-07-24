@@ -11,6 +11,7 @@ import ru.ruscalworld.pollbot.core.polls.Poll;
 import ru.ruscalworld.pollbot.core.polls.Variant;
 import ru.ruscalworld.pollbot.core.sessions.Session;
 import ru.ruscalworld.pollbot.core.sessions.SessionManager;
+import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 
 public class VariantCommand extends DefaultCommand {
     public VariantCommand() {
@@ -19,13 +20,15 @@ public class VariantCommand extends DefaultCommand {
 
     @Override
     public void onExecute(SlashCommandEvent event) throws Exception {
+        if (event.getGuild() == null) return;
         if (event.getMember() == null) return;
         if (event.getSubcommandName() == null) return;
 
+        GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
         SessionManager sessionManager = PollBot.getInstance().getSessionManager();
         Session session = sessionManager.getMemberSession(event.getMember());
-        Poll poll = PollCommand.ensurePollIsSelected(session);
-        PollCommand.ensurePollIsEditable(poll);
+        Poll poll = PollCommand.ensurePollIsSelected(session, settings);
+        PollCommand.ensurePollIsEditable(poll, settings);
 
         OptionMapping nameOption = event.getOption("name");
         assert nameOption != null;
@@ -45,13 +48,13 @@ public class VariantCommand extends DefaultCommand {
                 );
 
                 poll.updateLatestMessage();
-                event.getHook().sendMessage("Variant has been successfully created").queue();
+                event.getHook().sendMessage(settings.translate("responses.variant.create.success")).queue();
                 break;
             case "delete":
                 Variant variant = Variant.getByName(nameOption.getAsString(), poll);
                 variant.delete();
                 poll.updateLatestMessage();
-                event.getHook().sendMessage("Variant has been successfully deleted").queue();
+                event.getHook().sendMessage(settings.translate("responses.variant.delete.success")).queue();
                 break;
         }
     }

@@ -162,7 +162,7 @@ public class Variant extends DefaultModel {
     }
 
     public Component makeButton() {
-        return Button.secondary("vote " + this.getId(), Emoji.ofUnicode(this.getSign()));
+        return Button.secondary("vote " + this.getId(), Emoji.fromUnicode(this.getSign()));
     }
 
     public @Nullable String getDescription() {
