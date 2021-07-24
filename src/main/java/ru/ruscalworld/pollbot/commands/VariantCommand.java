@@ -48,13 +48,13 @@ public class VariantCommand extends DefaultCommand {
                         titleOption.getAsString()
                 );
 
-                poll.updateLatestMessage();
+                poll.updateLatestMessage(settings);
                 event.getHook().sendMessage(settings.translate("responses.variant.create.success")).queue();
                 break;
             case "delete":
                 Variant variant = Variant.getByName(nameOption.getAsString(), poll);
                 variant.delete();
-                poll.updateLatestMessage();
+                poll.updateLatestMessage(settings);
                 event.getHook().sendMessage(settings.translate("responses.variant.delete.success")).queue();
                 break;
         }

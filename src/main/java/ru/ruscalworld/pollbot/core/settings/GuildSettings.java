@@ -44,6 +44,10 @@ public class GuildSettings extends DefaultModel {
         return Translator.translate(this.getLanguage(), key, args);
     }
 
+    public String translate(int number, String key, Object... args) {
+        return Translator.translate(this.getLanguage(), number, key, args);
+    }
+
     public Guild getGuild() {
         return PollBot.getInstance().getJDA().getGuildById(this.getGuildId());
     }

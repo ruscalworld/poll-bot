@@ -36,7 +36,7 @@ public class PollCommand extends DefaultCommand {
                 assert nameOption != null;
                 Poll poll = Poll.create(nameOption.getAsString(), event.getMember());
 
-                poll.preview(event.getHook());
+                poll.preview(event.getHook(), settings);
                 session.setSelectedPoll(poll);
                 break;
             case "limit":
@@ -48,7 +48,7 @@ public class PollCommand extends DefaultCommand {
 
                 poll.setVotesPerUser(((int) valueOption.getAsLong()));
                 poll.save();
-                poll.updateLatestMessage();
+                poll.updateLatestMessage(settings);
                 event.getHook().sendMessage(settings.translate("responses.poll.per-user-limit.success", poll.getVotesPerUser())).queue();
             case "anonymous":
             case "describe":
@@ -68,11 +68,11 @@ public class PollCommand extends DefaultCommand {
                 break;
             case "preview":
                 poll = Ensure.ifPollIsSelected(settings, session);
-                poll.preview(event.getHook());
+                poll.preview(event.getHook(), settings);
                 break;
             case "publish":
                 poll = Ensure.ifPollIsSelected(settings, session);
-                poll.publish(event.getTextChannel());
+                poll.publish(event.getTextChannel(), settings);
                 event.getHook().sendMessage(settings.translate("responses.poll.publish.success", event.getTextChannel().getAsMention())).queue();
                 break;
         }

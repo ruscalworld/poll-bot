@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.interactions.components.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
+import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 import ru.ruscalworld.pollbot.exceptions.InteractionException;
 import ru.ruscalworld.pollbot.exceptions.NotFoundException;
 import ru.ruscalworld.storagelib.DefaultModel;
@@ -149,8 +150,8 @@ public class Variant extends DefaultModel {
         this.votes = votes;
     }
 
-    public @Nullable Vote vote(User user) throws Exception {
-        return Vote.create(this, user);
+    public @Nullable Vote vote(User user, GuildSettings settings) throws Exception {
+        return Vote.create(this, user, settings);
     }
 
     public MessageReaction getReaction(@Nullable Message message) {

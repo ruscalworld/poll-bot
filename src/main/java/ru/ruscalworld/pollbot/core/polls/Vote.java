@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.entities.User;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
+import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 import ru.ruscalworld.pollbot.exceptions.InteractionException;
 import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
@@ -46,23 +47,25 @@ public class Vote extends DefaultModel {
 
     }
 
-    public static Vote create(Variant variant, User user) throws Exception {
+    public static Vote create(Variant variant, User user, GuildSettings settings) throws Exception {
         Poll poll = variant.getPoll();
 
         if (poll.getEndsAt() != null && poll.getEndsAt().before(new Timestamp(System.currentTimeMillis())))
-            throw new InteractionException("This poll has ended, so you can't take part in it");
+            throw new InteractionException(settings.translate("responses.vote.create.ended", "<t:" + (poll.getEndsAt().getTime() / 1000) + ":R>"));
 
         List<Vote> votes = poll.getVotes(user);
 
         if (votes.size() >= poll.getVotesPerUser() && !poll.isRevoteAllowed()) {
             List<String> variants = new ArrayList<>();
             votes.forEach(vote -> variants.add(vote.getVariant().getTitle()));
-            throw new InteractionException("You have already voted for " + String.join(", ", variants) +
-                    " and you can not change your choice because of poll settings");
+            throw new InteractionException(settings.translate("responses.vote.create.no-revoting", String.join(", ", variants)));
         }
 
         if (votes.size() >= poll.getVotesPerUser())
-            throw new InteractionException("Only up to " + poll.getVotesPerUser() + " votes per user allowed in this poll");
+            throw new InteractionException(settings.translate(
+                    "responses.vote.create.vote-limit.max", poll.getVotesPerUser(),
+                    settings.translate(poll.getVotesPerUser(), "words.variant")
+            ));
 
         Storage storage = PollBot.getInstance().getStorage();
         Vote vote = new Vote(variant, user, null, null);

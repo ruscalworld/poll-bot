@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.interactions.components.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
+import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 import ru.ruscalworld.pollbot.exceptions.InteractionException;
 import ru.ruscalworld.pollbot.exceptions.NotFoundException;
 import ru.ruscalworld.pollbot.util.ProgressBar;
@@ -111,49 +112,47 @@ public class Poll extends DefaultModel {
         return poll;
     }
 
-    public void preview(InteractionHook hook) throws Exception {
-        if (this.isPublished()) throw new InteractionException("This poll is already published and cannot be previewed");
+    public void preview(InteractionHook hook, GuildSettings settings) throws Exception {
+        if (this.isPublished()) throw new InteractionException(settings.translate("responses.poll.preview.fail"));
 
-        Message message = hook.sendMessageEmbeds(this.getEmbed().build()).complete();
+        Message message = hook.sendMessageEmbeds(this.getEmbed(settings).build()).complete();
         if (this.getMessage() != null) {
-            this.getMessage().editMessage("Sorry, but bot can handle only one poll message. " +
-                    "Embed that you see below, will not be updated anymore. " +
-                    "Newer message with this poll can be found [here](" + message.getJumpUrl() + ").").queue();
+            this.getMessage().editMessage(settings.translate("responses.poll.message-limit", message.getJumpUrl())).queue();
         }
 
         this.setMessage(message);
         this.save();
     }
 
-    public void publish(TextChannel channel) throws Exception {
+    public void publish(TextChannel channel, GuildSettings settings) throws Exception {
         this.fetchVariants();
-        if (this.getVariants().size() < 2) throw new InteractionException("You must add at least 2 variants");
-        if (this.isPublished()) throw new InteractionException("This poll is already published");
+        if (this.getVariants().size() < 2) throw new InteractionException(settings.translate("responses.poll.publish.variant-limit.min", 2));
+        if (this.isPublished()) throw new InteractionException(settings.translate("responses.poll.publish.already-published"));
 
         List<Component> buttons = new ArrayList<>();
         for (Variant variant : this.getVariants()) buttons.add(variant.makeButton());
 
-        EmbedBuilder builder = this.getEmbed();
-        Message message = channel.sendMessage(builder.build()).setActionRows(ActionRow.of(buttons)).complete();
+        EmbedBuilder builder = this.getEmbed(settings);
+        Message message = channel.sendMessageEmbeds(builder.build()).setActionRows(ActionRow.of(buttons)).complete();
 
         this.setPublished(true);
         this.setMessage(message);
         this.save();
     }
 
-    public void updateLatestMessage() throws Exception {
-        if (this.getMessage() != null) this.getMessage().editMessage(this.getEmbed().build()).queue();
+    public void updateLatestMessage(GuildSettings settings) throws Exception {
+        if (this.getMessage() != null) this.getMessage().editMessageEmbeds(this.getEmbed(settings).build()).queue();
     }
 
-    private String getEmbedFooter() throws Exception {
+    private String getEmbedFooter(GuildSettings settings) throws Exception {
         int memberCount = this.getMemberCount();
-        return memberCount + " participants" +
-                (this.isAnonymous() ? " • " + "Anonymous poll" : "") +
-                (this.isMultipleChoiceAllowed() ? " • " + this.getVotesPerUser() + " votes per user" : "") +
-                (!this.isRevoteAllowed() ? " • " + "Revoting is disabled" : "");
+        return memberCount + " " + settings.translate(memberCount, "words.participant") +
+                (this.isAnonymous() ? " • " + settings.translate("phrases.poll.anonymous") : "") +
+                (this.isMultipleChoiceAllowed() ? " • " + settings.translate("phrases.poll.multiple-choice", this.getVotesPerUser()) : "") +
+                (!this.isRevoteAllowed() ? " • " + settings.translate("phrases.poll.no-revoting") : "");
     }
 
-    public EmbedBuilder getEmbed() throws Exception {
+    public EmbedBuilder getEmbed(GuildSettings settings) throws Exception {
         this.fetchVariants();
         int totalVotes = this.getTotalVotes();
         EmbedBuilder builder = new EmbedBuilder();
@@ -170,7 +169,7 @@ public class Poll extends DefaultModel {
             builder.addField(name, value, false);
         }
 
-        builder.setFooter(this.getEmbedFooter());
+        builder.setFooter(this.getEmbedFooter(settings));
         return builder;
     }
 
