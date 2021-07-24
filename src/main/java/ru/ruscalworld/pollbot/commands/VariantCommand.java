@@ -12,6 +12,7 @@ import ru.ruscalworld.pollbot.core.polls.Variant;
 import ru.ruscalworld.pollbot.core.sessions.Session;
 import ru.ruscalworld.pollbot.core.sessions.SessionManager;
 import ru.ruscalworld.pollbot.core.settings.GuildSettings;
+import ru.ruscalworld.pollbot.util.Ensure;
 
 public class VariantCommand extends DefaultCommand {
     public VariantCommand() {
@@ -27,8 +28,8 @@ public class VariantCommand extends DefaultCommand {
         GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
         SessionManager sessionManager = PollBot.getInstance().getSessionManager();
         Session session = sessionManager.getMemberSession(event.getMember());
-        Poll poll = PollCommand.ensurePollIsSelected(session, settings);
-        PollCommand.ensurePollIsEditable(poll, settings);
+        Poll poll = Ensure.ifPollIsSelected(settings, session);
+        Ensure.ifPollIsEditable(settings, poll);
 
         OptionMapping nameOption = event.getOption("name");
         assert nameOption != null;

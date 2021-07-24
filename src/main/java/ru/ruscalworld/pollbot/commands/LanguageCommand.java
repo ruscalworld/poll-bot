@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
 import ru.ruscalworld.pollbot.PollBot;
 import ru.ruscalworld.pollbot.core.commands.DefaultCommand;
 import ru.ruscalworld.pollbot.core.settings.GuildSettings;
+import ru.ruscalworld.pollbot.util.Ensure;
 
 import java.util.Collections;
 
@@ -18,7 +19,10 @@ public class LanguageCommand extends DefaultCommand {
     @Override
     public void onExecute(SlashCommandEvent event) throws Exception {
         if (event.getGuild() == null) return;
+        if (event.getMember() == null) return;
+
         GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
+        Ensure.ifMemberIsAdministrator(settings, event.getMember());
 
         SelectionMenu.Builder menu = SelectionMenu.create("language");
         menu.setMaxValues(1);

@@ -6,6 +6,7 @@ import ru.ruscalworld.pollbot.core.i18n.Translation;
 import ru.ruscalworld.pollbot.core.interactions.DefaultInteractionHandler;
 import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 import ru.ruscalworld.pollbot.exceptions.InteractionException;
+import ru.ruscalworld.pollbot.util.Ensure;
 
 public class LanguageInteraction extends DefaultInteractionHandler {
     public LanguageInteraction() {
@@ -15,13 +16,16 @@ public class LanguageInteraction extends DefaultInteractionHandler {
     @Override
     public void onSelectionMenu(SelectionMenuEvent event) throws Exception {
         if (event.getValues().size() != 1) return;
+        if (event.getMember() == null) return;
         if (event.getGuild() == null) return;
-        String code = event.getValues().get(0);
 
+        GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
+        Ensure.ifMemberIsAdministrator(settings, event.getMember());
+
+        String code = event.getValues().get(0);
         Translation translation = PollBot.getInstance().getTranslations().get(code);
         if (translation == null) throw new InteractionException("Unknown translation: \"" + code + "\"");
 
-        GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
         settings.setLanguage(code);
         settings.save();
 

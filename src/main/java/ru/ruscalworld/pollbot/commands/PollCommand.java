@@ -13,6 +13,7 @@ import ru.ruscalworld.pollbot.core.commands.DefaultCommand;
 import ru.ruscalworld.pollbot.core.sessions.Session;
 import ru.ruscalworld.pollbot.core.sessions.SessionManager;
 import ru.ruscalworld.pollbot.exceptions.NotFoundException;
+import ru.ruscalworld.pollbot.util.Ensure;
 
 public class PollCommand extends DefaultCommand {
     public PollCommand() {
@@ -41,8 +42,8 @@ public class PollCommand extends DefaultCommand {
             case "limit":
                 OptionMapping valueOption = event.getOption("value");
                 assert valueOption != null;
-                poll = ensurePollIsSelected(session, settings);
-                ensurePollIsEditable(poll, settings);
+                poll = Ensure.ifPollIsSelected(settings, session);
+                Ensure.ifPollIsEditable(settings, poll);
                 if (valueOption.getAsLong() < 1) throw new InteractionException(settings.translate("responses.poll.per-user-limit.min", 1));
 
                 poll.setVotesPerUser(((int) valueOption.getAsLong()));
@@ -66,24 +67,15 @@ public class PollCommand extends DefaultCommand {
                 event.getHook().sendMessage(settings.translate("responses.poll.select.success")).queue();
                 break;
             case "preview":
-                poll = ensurePollIsSelected(session, settings);
+                poll = Ensure.ifPollIsSelected(settings, session);
                 poll.preview(event.getHook());
                 break;
             case "publish":
-                poll = ensurePollIsSelected(session, settings);
+                poll = Ensure.ifPollIsSelected(settings, session);
                 poll.publish(event.getTextChannel());
                 event.getHook().sendMessage(settings.translate("responses.poll.publish.success", event.getTextChannel().getAsMention())).queue();
                 break;
         }
-    }
-
-    public static Poll ensurePollIsSelected(Session session, GuildSettings settings) throws InteractionException {
-        if (session.getSelectedPoll() == null) throw new InteractionException(settings.translate("responses.poll.generic.not-selected"));
-        return session.getSelectedPoll();
-    }
-
-    public static void ensurePollIsEditable(Poll poll, GuildSettings settings) throws InteractionException {
-        if (poll.isPublished()) throw new InteractionException(settings.translate("responses.poll.generic.not-editable"));
     }
 
     @Override
