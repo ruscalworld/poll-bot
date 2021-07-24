@@ -43,6 +43,7 @@ public class PollCommand extends DefaultCommand {
             case "limit":
                 OptionMapping valueOption = event.getOption("value");
                 assert valueOption != null;
+
                 poll = Ensure.ifPollIsSelected(settings, session);
                 Ensure.ifPollIsEditable(settings, poll);
                 if (valueOption.getAsLong() < 1) throw new InteractionException(settings, "responses.poll.per-user-limit.min", 1);
@@ -52,7 +53,18 @@ public class PollCommand extends DefaultCommand {
                 poll.updateLatestMessage(settings);
 
                 return Response.translation(settings, "responses.poll.per-user-limit.success", poll.getVotesPerUser());
-            case "anonymous":
+            case "title":
+                OptionMapping titleOption = event.getOption("title");
+                assert titleOption != null;
+
+                poll = Ensure.ifPollIsSelected(settings, session);
+                Ensure.ifPollIsEditable(settings, poll);
+
+                poll.setTitle(titleOption.getAsString());
+                poll.save();
+                poll.updateLatestMessage(settings);
+
+                return Response.translation(settings, "responses.poll.title.success");
             case "describe":
                 break;
             case "select":
@@ -87,8 +99,8 @@ public class PollCommand extends DefaultCommand {
                         .addOption(OptionType.STRING, "name", "Name of the poll", true),
                 new SubcommandData("describe", "Changes description of the poll")
                         .addOption(OptionType.STRING, "description", "New description of the poll", true),
-                new SubcommandData("anonymous", "Makes poll anonymous or not")
-                        .addOption(OptionType.BOOLEAN, "value", "Should your poll be anonymous?", true),
+                new SubcommandData("title", "Changes title of the poll")
+                        .addOption(OptionType.STRING, "title", "New title of the poll", true),
                 new SubcommandData("limit", "Sets limit for amount of votes per user")
                         .addOption(OptionType.INTEGER, "value", "Maximum votes per user", true),
                 new SubcommandData("select", "Selects a previously created poll to make you able to edit it")
