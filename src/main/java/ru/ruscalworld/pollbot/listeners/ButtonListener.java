@@ -45,7 +45,6 @@ public class ButtonListener extends ListenerAdapter {
         CompletableFuture.runAsync(() -> {
             try {
                 GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
-                Ensure.ifMemberCanUseBot(settings, event.getMember());
                 handler.onButtonClick(event, args, settings);
             } catch (InteractionException exception) {
                 event.getHook().sendMessage(exception.getMessage()).queue();

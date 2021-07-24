@@ -40,7 +40,7 @@ public class SlashCommandListener extends ListenerAdapter {
         CompletableFuture.runAsync(() -> {
             try {
                 GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
-                Ensure.ifMemberCanUseBot(settings, event.getMember());
+                Ensure.ifMemberCanUseCommands(settings, event.getMember());
 
                 Response response = command.onExecute(event, settings);
                 if (response != null) {

@@ -26,7 +26,7 @@ public class Ensure {
             throw new InteractionException(settings.translate("responses.generic.no-permission"));
     }
 
-    public static void ifMemberCanUseBot(GuildSettings settings, Member member) throws InteractionException {
+    public static void ifMemberCanUseCommands(GuildSettings settings, Member member) throws InteractionException {
         if (settings.isAvailableToAllMembers()) return;
         Ensure.ifMemberIsAdministrator(settings, member);
     }
