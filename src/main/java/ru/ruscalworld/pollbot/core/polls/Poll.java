@@ -220,8 +220,12 @@ public class Poll extends DefaultModel {
     }
 
     public List<Vote> getVotes(User user) throws Exception {
-        Storage storage = PollBot.getInstance().getStorage();
-        List<Vote> votes = storage.findAll(Vote.class, Comparison.equal("member_id", user.getId()));
+        this.fetchVariants();
+
+        List<Vote> votes = new ArrayList<>();
+        for (Variant variant : this.getVariants()) {
+            votes.addAll(variant.getVotes(user));
+        }
 
         for (Vote vote : votes) {
             Variant variant = this.getVariant(vote.getVariantId());
@@ -242,11 +246,11 @@ public class Poll extends DefaultModel {
     }
 
     public boolean isMultipleChoiceAllowed() {
-        return this.getVotesPerUser() > 0;
+        return this.getVotesPerUser() > 1;
     }
 
     public int getVotesPerUser() {
-        return this.votesPerUser;
+        return this.votesPerUser == 0 ? 1 : this.votesPerUser;
     }
 
     public void setVotesPerUser(int votesPerUser) {

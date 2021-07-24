@@ -190,6 +190,14 @@ public class Variant extends DefaultModel {
         return votes;
     }
 
+    public @NotNull List<Vote> getVotes(User user) throws Exception {
+        Storage storage = PollBot.getInstance().getStorage();
+        return storage.findAll(Vote.class, Condition.and(
+                Comparison.equal("member_id", user.getId()),
+                Comparison.equal("variant_id", this.getId())
+        ));
+    }
+
     public boolean isVotesFetched() {
         return votesFetched;
     }
