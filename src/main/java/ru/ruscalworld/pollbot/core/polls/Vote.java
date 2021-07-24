@@ -55,6 +55,14 @@ public class Vote extends DefaultModel {
 
         List<Vote> votes = poll.getVotes(user);
 
+        for (Vote vote : votes) {
+            if (vote.getVariantId() != variant.getId()) continue;
+            if (poll.isRevoteAllowed()) {
+                vote.delete();
+                return null;
+            } else throw new InteractionException(settings.translate("responses.vote.delete.no-revoting", variant.getTitle()));
+        }
+
         if (votes.size() >= poll.getVotesPerUser() && !poll.isRevoteAllowed()) {
             List<String> variants = new ArrayList<>();
             votes.forEach(vote -> variants.add(vote.getVariant().getTitle()));

@@ -19,9 +19,12 @@ public class VoteInteraction extends DefaultInteractionHandler {
         if (variant == null) return;
 
         Vote vote = variant.vote(event.getUser(), settings);
-        if (vote == null) return;
+        if (vote != null) {
+            event.getHook().sendMessage(settings.translate("responses.vote.create.success", vote.getVariant().getTitle())).queue();
+        } else {
+            event.getHook().sendMessage(settings.translate("responses.vote.delete.success", variant.getTitle())).queue();
+        }
 
-        event.getHook().sendMessage(settings.translate("responses.vote.create.success", vote.getVariant().getTitle())).queue();
-        vote.getPoll().updateLatestMessage(settings);
+        variant.getPoll().updateLatestMessage(settings);
     }
 }
