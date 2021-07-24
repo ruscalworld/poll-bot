@@ -52,7 +52,7 @@ public class PollCommand extends DefaultCommand {
                 poll.save();
                 poll.updateLatestMessage(settings);
 
-                return Response.translation(settings, "responses.poll.per-user-limit.success", poll.getVotesPerUser());
+                return Response.translation(settings, true, "responses.poll.per-user-limit.success", poll.getVotesPerUser());
             case "title":
                 OptionMapping titleOption = event.getOption("title");
                 assert titleOption != null;
@@ -64,7 +64,7 @@ public class PollCommand extends DefaultCommand {
                 poll.save();
                 poll.updateLatestMessage(settings);
 
-                return Response.translation(settings, "responses.poll.title.success");
+                return Response.translation(settings, true, "responses.poll.title.success");
             case "describe":
                 OptionMapping descriptionOption = event.getOption("description");
                 assert descriptionOption != null;
@@ -76,7 +76,7 @@ public class PollCommand extends DefaultCommand {
                 poll.save();
                 poll.updateLatestMessage(settings);
 
-                return Response.translation(settings, "responses.poll.describe.success");
+                return Response.translation(settings, true, "responses.poll.describe.success");
             case "select":
                 nameOption = event.getOption("name");
                 assert nameOption != null && event.getGuild() != null;
@@ -87,7 +87,7 @@ public class PollCommand extends DefaultCommand {
                     throw new InteractionException(settings, "responses.poll.generic.not-owner");
 
                 session.setSelectedPoll(poll);
-                return Response.translation(settings, "responses.poll.select.success");
+                return Response.translation(settings, true, "responses.poll.select.success");
             case "preview":
                 event.deferReply().queue();
                 poll = Ensure.ifPollIsSelected(settings, session);

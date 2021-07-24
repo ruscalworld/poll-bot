@@ -44,7 +44,7 @@ public class SlashCommandListener extends ListenerAdapter {
 
                 Response response = command.onExecute(event, settings);
                 if (response != null) {
-                    event.deferReply().queue();
+                    event.deferReply(response.isEphemeral()).queue();
                     hook.sendMessage(response.getMessage()).queue();
                 }
             } catch (InteractionException exception) {
