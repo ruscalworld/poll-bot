@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import ru.ruscalworld.pollbot.PollBot;
+import ru.ruscalworld.pollbot.core.commands.Response;
 import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 import ru.ruscalworld.pollbot.exceptions.InteractionException;
 import ru.ruscalworld.pollbot.core.polls.Poll;
@@ -21,8 +22,8 @@ public class PollCommand extends DefaultCommand {
     }
 
     @Override
-    public void onExecute(SlashCommandEvent event, GuildSettings settings) throws Exception {
-        if (event.getSubcommandName() == null) return;
+    public Response onExecute(SlashCommandEvent event, GuildSettings settings) throws Exception {
+        if (event.getSubcommandName() == null) return null;
         assert event.getGuild() != null && event.getMember() != null;
 
         SessionManager sessionManager = PollBot.getInstance().getSessionManager();
@@ -34,8 +35,10 @@ public class PollCommand extends DefaultCommand {
                 assert nameOption != null;
                 Poll poll = Poll.create(nameOption.getAsString(), event.getMember());
 
+                event.deferReply().queue();
                 poll.preview(event.getHook(), settings);
                 session.setSelectedPoll(poll);
+
                 break;
             case "limit":
                 OptionMapping valueOption = event.getOption("value");
@@ -47,14 +50,14 @@ public class PollCommand extends DefaultCommand {
                 poll.setVotesPerUser(((int) valueOption.getAsLong()));
                 poll.save();
                 poll.updateLatestMessage(settings);
-                event.getHook().sendMessage(settings.translate("responses.poll.per-user-limit.success", poll.getVotesPerUser())).queue();
+
+                return Response.translation(settings, "responses.poll.per-user-limit.success", poll.getVotesPerUser());
             case "anonymous":
             case "describe":
                 break;
             case "select":
                 nameOption = event.getOption("name");
-                assert nameOption != null;
-                if (event.getGuild() == null) return;
+                assert nameOption != null && event.getGuild() != null;
 
                 poll = Poll.getByName(nameOption.getAsString(), event.getGuild());
                 if (poll == null) throw new NotFoundException(settings.translate("responses.poll.generic.unknown"));
@@ -62,18 +65,19 @@ public class PollCommand extends DefaultCommand {
                     throw new InteractionException(settings.translate("responses.poll.generic.not-owner"));
 
                 session.setSelectedPoll(poll);
-                event.getHook().sendMessage(settings.translate("responses.poll.select.success")).queue();
-                break;
+                return Response.translation(settings, "responses.poll.select.success");
             case "preview":
+                event.deferReply().queue();
                 poll = Ensure.ifPollIsSelected(settings, session);
                 poll.preview(event.getHook(), settings);
                 break;
             case "publish":
                 poll = Ensure.ifPollIsSelected(settings, session);
                 poll.publish(event.getTextChannel(), settings);
-                event.getHook().sendMessage(settings.translate("responses.poll.publish.success", event.getTextChannel().getAsMention())).queue();
-                break;
+                return Response.translation(settings, "responses.poll.publish.success", event.getTextChannel().getAsMention());
         }
+
+        return null;
     }
 
     @Override

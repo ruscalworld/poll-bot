@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData;
 import ru.ruscalworld.pollbot.PollBot;
 import ru.ruscalworld.pollbot.core.commands.DefaultCommand;
+import ru.ruscalworld.pollbot.core.commands.Response;
 import ru.ruscalworld.pollbot.core.polls.Poll;
 import ru.ruscalworld.pollbot.core.polls.Variant;
 import ru.ruscalworld.pollbot.core.sessions.Session;
@@ -20,8 +21,8 @@ public class VariantCommand extends DefaultCommand {
     }
 
     @Override
-    public void onExecute(SlashCommandEvent event, GuildSettings settings) throws Exception {
-        if (event.getSubcommandName() == null) return;
+    public Response onExecute(SlashCommandEvent event, GuildSettings settings) throws Exception {
+        if (event.getSubcommandName() == null) return null;
 
         SessionManager sessionManager = PollBot.getInstance().getSessionManager();
         Session session = sessionManager.getMemberSession(event.getMember());
@@ -46,15 +47,15 @@ public class VariantCommand extends DefaultCommand {
                 );
 
                 poll.updateLatestMessage(settings);
-                event.getHook().sendMessage(settings.translate("responses.variant.create.success")).queue();
-                break;
+                return Response.translation(settings, "responses.variant.create.success");
             case "delete":
                 Variant variant = Variant.getByName(nameOption.getAsString(), poll);
                 variant.delete();
                 poll.updateLatestMessage(settings);
-                event.getHook().sendMessage(settings.translate("responses.variant.delete.success")).queue();
-                break;
+                return Response.translation(settings, "responses.variant.delete.success");
         }
+
+        return null;
     }
 
     @Override

@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.SelectionMenu;
 import ru.ruscalworld.pollbot.PollBot;
 import ru.ruscalworld.pollbot.core.commands.DefaultCommand;
+import ru.ruscalworld.pollbot.core.commands.Response;
 import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 import ru.ruscalworld.pollbot.util.Ensure;
 
@@ -17,7 +18,7 @@ public class LanguageCommand extends DefaultCommand {
     }
 
     @Override
-    public void onExecute(SlashCommandEvent event, GuildSettings settings) throws Exception {
+    public Response onExecute(SlashCommandEvent event, GuildSettings settings) throws Exception {
         assert event.getMember() != null;
         Ensure.ifMemberIsAdministrator(settings, event.getMember());
         SelectionMenu.Builder menu = SelectionMenu.create("language");
@@ -31,6 +32,6 @@ public class LanguageCommand extends DefaultCommand {
             menu.addOptions(Collections.singletonList(option));
         });
 
-        event.getHook().sendMessage("Please select your language").addActionRow(menu.build()).queue();
+        return Response.selection("Please select your language", menu.build());
     }
 }
