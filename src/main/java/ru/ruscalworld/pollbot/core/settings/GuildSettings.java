@@ -63,4 +63,8 @@ public class GuildSettings extends DefaultModel {
     public void setLanguage(String language) {
         this.language = language;
     }
+
+    public boolean isAvailableToAllMembers() {
+        return false;
+    }
 }

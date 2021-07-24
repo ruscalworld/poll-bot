@@ -6,8 +6,10 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ruscalworld.pollbot.PollBot;
+import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 import ru.ruscalworld.pollbot.exceptions.InteractionException;
 import ru.ruscalworld.pollbot.core.commands.Command;
+import ru.ruscalworld.pollbot.util.Ensure;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -16,6 +18,9 @@ public class SlashCommandListener extends ListenerAdapter {
 
     @Override
     public void onSlashCommand(@NotNull SlashCommandEvent event) {
+        if (event.getGuild() == null) return;
+        if (event.getMember() == null) return;
+
         String name = event.getName();
         Command command = PollBot.getInstance().getCommands().get(name);
         if (command == null) {
@@ -33,7 +38,9 @@ public class SlashCommandListener extends ListenerAdapter {
 
         CompletableFuture.runAsync(() -> {
             try {
-                command.onExecute(event);
+                GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
+                Ensure.ifMemberCanUseBot(settings, event.getMember());
+                command.onExecute(event, settings);
             } catch (InteractionException exception) {
                 event.getHook().sendMessage(exception.getMessage()).queue();
             } catch (Exception exception) {

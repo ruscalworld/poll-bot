@@ -17,13 +17,9 @@ public class LanguageCommand extends DefaultCommand {
     }
 
     @Override
-    public void onExecute(SlashCommandEvent event) throws Exception {
-        if (event.getGuild() == null) return;
-        if (event.getMember() == null) return;
-
-        GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
+    public void onExecute(SlashCommandEvent event, GuildSettings settings) throws Exception {
+        assert event.getMember() != null;
         Ensure.ifMemberIsAdministrator(settings, event.getMember());
-
         SelectionMenu.Builder menu = SelectionMenu.create("language");
         menu.setMaxValues(1);
         menu.setMinValues(1);

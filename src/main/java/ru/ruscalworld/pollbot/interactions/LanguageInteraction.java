@@ -14,12 +14,9 @@ public class LanguageInteraction extends DefaultInteractionHandler {
     }
 
     @Override
-    public void onSelectionMenu(SelectionMenuEvent event) throws Exception {
+    public void onSelectionMenu(SelectionMenuEvent event, GuildSettings settings) throws Exception {
         if (event.getValues().size() != 1) return;
-        if (event.getMember() == null) return;
-        if (event.getGuild() == null) return;
-
-        GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
+        assert event.getMember() != null;
         Ensure.ifMemberIsAdministrator(settings, event.getMember());
 
         String code = event.getValues().get(0);

@@ -25,4 +25,9 @@ public class Ensure {
         if (!member.hasPermission(Permission.ADMINISTRATOR) || !member.isOwner())
             throw new InteractionException(settings.translate("responses.generic.no-permission"));
     }
+
+    public static void ifMemberCanUseBot(GuildSettings settings, Member member) throws InteractionException {
+        if (settings.isAvailableToAllMembers()) return;
+        Ensure.ifMemberIsAdministrator(settings, member);
+    }
 }

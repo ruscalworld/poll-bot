@@ -7,7 +7,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.ruscalworld.pollbot.PollBot;
 import ru.ruscalworld.pollbot.core.interactions.InteractionHandler;
+import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 import ru.ruscalworld.pollbot.exceptions.InteractionException;
+import ru.ruscalworld.pollbot.util.Ensure;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -16,7 +18,10 @@ public class SelectionMenuListener extends ListenerAdapter {
 
     @Override
     public void onSelectionMenu(@NotNull SelectionMenuEvent event) {
+        if (event.getGuild() == null) return;
+        if (event.getMember() == null) return;
         if (event.getSelectionMenu() == null) return;
+
         String id = event.getSelectionMenu().getId();
         if (id == null) return;
         InteractionHandler handler = PollBot.getInstance().getInteractionHandlers().get(id);
@@ -30,7 +35,9 @@ public class SelectionMenuListener extends ListenerAdapter {
         event.deferReply(true).queue();
         CompletableFuture.runAsync(() -> {
             try {
-                handler.onSelectionMenu(event);
+                GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
+                Ensure.ifMemberCanUseBot(settings, event.getMember());
+                handler.onSelectionMenu(event, settings);
             } catch (InteractionException exception) {
                 event.getHook().sendMessage(exception.getMessage()).queue();
             } catch (Exception exception) {

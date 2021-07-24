@@ -20,12 +20,9 @@ public class VariantCommand extends DefaultCommand {
     }
 
     @Override
-    public void onExecute(SlashCommandEvent event) throws Exception {
-        if (event.getGuild() == null) return;
-        if (event.getMember() == null) return;
+    public void onExecute(SlashCommandEvent event, GuildSettings settings) throws Exception {
         if (event.getSubcommandName() == null) return;
 
-        GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
         SessionManager sessionManager = PollBot.getInstance().getSessionManager();
         Session session = sessionManager.getMemberSession(event.getMember());
         Poll poll = Ensure.ifPollIsSelected(settings, session);

@@ -5,6 +5,7 @@ import ru.ruscalworld.pollbot.core.interactions.DefaultInteractionHandler;
 import ru.ruscalworld.pollbot.core.polls.Variant;
 import ru.ruscalworld.pollbot.core.polls.Vote;
 import ru.ruscalworld.pollbot.core.settings.GuildSettings;
+import ru.ruscalworld.pollbot.util.Ensure;
 
 public class VoteInteraction extends DefaultInteractionHandler {
     public VoteInteraction() {
@@ -12,10 +13,7 @@ public class VoteInteraction extends DefaultInteractionHandler {
     }
 
     @Override
-    public void onButtonClick(ButtonClickEvent event, String[] args) throws Exception {
-        if (event.getGuild() == null) return;
-        GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
-
+    public void onButtonClick(ButtonClickEvent event, String[] args, GuildSettings settings) throws Exception {
         long id = Long.parseLong(args[0]);
         Variant variant = Variant.get(id);
         if (variant == null) return;

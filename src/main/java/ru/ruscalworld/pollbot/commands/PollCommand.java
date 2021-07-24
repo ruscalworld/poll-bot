@@ -21,14 +21,12 @@ public class PollCommand extends DefaultCommand {
     }
 
     @Override
-    public void onExecute(SlashCommandEvent event) throws Exception {
-        if (event.getGuild() == null) return;
-        if (event.getMember() == null) return;
+    public void onExecute(SlashCommandEvent event, GuildSettings settings) throws Exception {
         if (event.getSubcommandName() == null) return;
+        assert event.getGuild() != null && event.getMember() != null;
 
         SessionManager sessionManager = PollBot.getInstance().getSessionManager();
         Session session = sessionManager.getMemberSession(event.getMember());
-        GuildSettings settings = GuildSettings.getByGuild(event.getGuild());
 
         switch (event.getSubcommandName()) {
             case "create":
