@@ -10,7 +10,6 @@ import org.jetbrains.annotations.Nullable;
 import ru.ruscalworld.pollbot.PollBot;
 import ru.ruscalworld.pollbot.core.settings.GuildSettings;
 import ru.ruscalworld.pollbot.exceptions.InteractionException;
-import ru.ruscalworld.pollbot.exceptions.NotFoundException;
 import ru.ruscalworld.pollbot.util.ProgressBar;
 import ru.ruscalworld.storagelib.DefaultModel;
 import ru.ruscalworld.storagelib.Storage;
@@ -18,6 +17,7 @@ import ru.ruscalworld.storagelib.annotations.Model;
 import ru.ruscalworld.storagelib.annotations.Property;
 import ru.ruscalworld.storagelib.builder.expressions.Comparison;
 import ru.ruscalworld.storagelib.builder.expressions.Condition;
+import ru.ruscalworld.storagelib.exceptions.NotFoundException;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
