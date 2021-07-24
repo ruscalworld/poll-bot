@@ -45,11 +45,11 @@ public class Poll extends DefaultModel {
     @Nullable private Message message;
     private Member owner;
     @Property(column = "allow_revote")
-    private boolean allowRevote;
+    private boolean allowRevote = true;
     @Property(column = "votes_per_user")
-    private int votesPerUser;
+    private int votesPerUser = 1;
     @Property(column = "anonymous")
-    private boolean anonymous;
+    private boolean anonymous = true;
     @Property(column = "published")
     private boolean published;
 
