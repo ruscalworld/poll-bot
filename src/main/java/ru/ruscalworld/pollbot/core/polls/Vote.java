@@ -51,7 +51,7 @@ public class Vote extends DefaultModel {
         Poll poll = variant.getPoll();
 
         if (poll.getEndsAt() != null && poll.getEndsAt().before(new Timestamp(System.currentTimeMillis())))
-            throw new InteractionException(settings.translate("responses.vote.create.ended", "<t:" + (poll.getEndsAt().getTime() / 1000) + ":R>"));
+            throw new InteractionException(settings, "responses.vote.create.ended", "<t:" + (poll.getEndsAt().getTime() / 1000) + ":R>");
 
         List<Vote> votes = poll.getVotes(user);
 
@@ -60,13 +60,13 @@ public class Vote extends DefaultModel {
             if (poll.isRevoteAllowed()) {
                 vote.delete();
                 return null;
-            } else throw new InteractionException(settings.translate("responses.vote.delete.no-revoting", variant.getTitle()));
+            } else throw new InteractionException(settings, "responses.vote.delete.no-revoting", variant.getTitle());
         }
 
         if (votes.size() >= poll.getVotesPerUser() && !poll.isRevoteAllowed()) {
             List<String> variants = new ArrayList<>();
             votes.forEach(vote -> variants.add(vote.getVariant().getTitle()));
-            throw new InteractionException(settings.translate("responses.vote.create.no-revoting", String.join(", ", variants)));
+            throw new InteractionException(settings, "responses.vote.create.no-revoting", String.join(", ", variants));
         }
 
         if (votes.size() >= poll.getVotesPerUser())

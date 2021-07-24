@@ -45,7 +45,7 @@ public class PollCommand extends DefaultCommand {
                 assert valueOption != null;
                 poll = Ensure.ifPollIsSelected(settings, session);
                 Ensure.ifPollIsEditable(settings, poll);
-                if (valueOption.getAsLong() < 1) throw new InteractionException(settings.translate("responses.poll.per-user-limit.min", 1));
+                if (valueOption.getAsLong() < 1) throw new InteractionException(settings, "responses.poll.per-user-limit.min", 1);
 
                 poll.setVotesPerUser(((int) valueOption.getAsLong()));
                 poll.save();
@@ -60,9 +60,9 @@ public class PollCommand extends DefaultCommand {
                 assert nameOption != null && event.getGuild() != null;
 
                 poll = Poll.getByName(nameOption.getAsString(), event.getGuild());
-                if (poll == null) throw new NotFoundException(settings.translate("responses.poll.generic.unknown"));
+                if (poll == null) throw new NotFoundException(settings, "responses.poll.generic.unknown");
                 if (!poll.getOwnerId().equals(event.getMember().getId()))
-                    throw new InteractionException(settings.translate("responses.poll.generic.not-owner"));
+                    throw new InteractionException(settings, "responses.poll.generic.not-owner");
 
                 session.setSelectedPoll(poll);
                 return Response.translation(settings, "responses.poll.select.success");

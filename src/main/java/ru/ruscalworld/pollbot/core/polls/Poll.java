@@ -113,7 +113,7 @@ public class Poll extends DefaultModel {
     }
 
     public void preview(InteractionHook hook, GuildSettings settings) throws Exception {
-        if (this.isPublished()) throw new InteractionException(settings.translate("responses.poll.preview.fail"));
+        if (this.isPublished()) throw new InteractionException(settings, "responses.poll.preview.fail");
 
         Message message = hook.sendMessageEmbeds(this.getEmbed(settings).build()).complete();
         if (this.getMessage() != null) {
@@ -126,8 +126,8 @@ public class Poll extends DefaultModel {
 
     public void publish(TextChannel channel, GuildSettings settings) throws Exception {
         this.fetchVariants();
-        if (this.getVariants().size() < 2) throw new InteractionException(settings.translate("responses.poll.publish.variant-limit.min", 2));
-        if (this.isPublished()) throw new InteractionException(settings.translate("responses.poll.publish.already-published"));
+        if (this.getVariants().size() < 2) throw new InteractionException(settings, "responses.poll.publish.variant-limit.min", 2);
+        if (this.isPublished()) throw new InteractionException(settings, "responses.poll.publish.already-published");
 
         List<Component> buttons = new ArrayList<>();
         for (Variant variant : this.getVariants()) buttons.add(variant.makeButton());
