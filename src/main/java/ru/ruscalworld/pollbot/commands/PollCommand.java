@@ -66,7 +66,17 @@ public class PollCommand extends DefaultCommand {
 
                 return Response.translation(settings, "responses.poll.title.success");
             case "describe":
-                break;
+                OptionMapping descriptionOption = event.getOption("description");
+                assert descriptionOption != null;
+
+                poll = Ensure.ifPollIsSelected(settings, session);
+                Ensure.ifPollIsEditable(settings, poll);
+
+                poll.setDescription(descriptionOption.getAsString());
+                poll.save();
+                poll.updateLatestMessage(settings);
+
+                return Response.translation(settings, "responses.poll.describe.success");
             case "select":
                 nameOption = event.getOption("name");
                 assert nameOption != null && event.getGuild() != null;
