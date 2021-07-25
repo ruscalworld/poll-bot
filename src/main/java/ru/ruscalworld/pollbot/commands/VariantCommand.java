@@ -47,12 +47,12 @@ public class VariantCommand extends DefaultCommand {
                 );
 
                 poll.updateLatestMessage(settings);
-                return Response.translation(settings, "responses.variant.create.success");
+                return Response.translation(settings, true, "responses.variant.create.success");
             case "delete":
                 Variant variant = Variant.getByName(nameOption.getAsString(), poll);
                 variant.delete();
                 poll.updateLatestMessage(settings);
-                return Response.translation(settings, "responses.variant.delete.success");
+                return Response.translation(settings, true, "responses.variant.delete.success");
         }
 
         return null;
