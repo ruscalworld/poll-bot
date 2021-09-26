@@ -142,9 +142,11 @@ public class Variant extends DefaultModel {
 
         Vote.getByVariant(this).forEach(vote -> {
             User user = PollBot.getInstance().getJDA().getUserById(vote.getMemberId());
-            vote.setMember(Objects.requireNonNull(user));
-            vote.setVariant(this);
-            votes.add(vote);
+            if (user != null) {
+                vote.setMember(user);
+                vote.setVariant(this);
+                votes.add(vote);
+            }
         });
 
         this.votes = votes;
