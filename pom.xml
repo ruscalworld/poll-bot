@@ -31,7 +31,7 @@
         </repository>
         <repository>
             <id>ruscalworld-releases</id>
-            <url>https://maven.ruscalworld.ru/releases</url>
+            <url>https://maven.ruscal.world/releases</url>
         </repository>
     </repositories>
 
@@ -101,7 +101,7 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
+            <version>1.2.9</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
